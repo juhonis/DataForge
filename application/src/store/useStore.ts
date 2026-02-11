@@ -7,20 +7,21 @@ interface StoreState {
 	addField: (field: BlueprintField) => void;
 	removeField: (id: string) => void;
 	updateField: (id: string, updates: Partial<BlueprintField>) => void;
+	updateFieldOption: (fieldId: string, key: string, value: any) => void;
 }
 
 export const useStore = create<StoreState>((set) => ({
 	blueprint: {
 		name: 'New E-shop Category',
 		fields: [
-		{ id: '1', key: 'id', provider: 'string.uuid' },
-		{ id: '2', key: 'name', provider: 'commerce.productName' },
-		{ id: '3', key: 'price', provider: 'commerce.price', options: { min: 100, max: 1000 } },
+			{ id: '1', key: 'id', provider: 'string.uuid' },
+			{ id: '2', key: 'name', provider: 'commerce.productName' },
+			{ id: '3', key: 'price', provider: 'commerce.price', options: { min: 100, max: 1000 } },
 		]
 	},
 
-  	updateBlueprintName: (name) => 
-    	set((state) => ({ blueprint: { ...state.blueprint, name } })),
+	updateBlueprintName: (name) => 
+		set((state) => ({ blueprint: { ...state.blueprint, name } })),
 
 	addField: (field) => 
 		set((state) => ({ 
@@ -34,9 +35,21 @@ export const useStore = create<StoreState>((set) => ({
 
 	updateField: (id, updates) => 
 		set((state) => ({
-		blueprint: {
-			...state.blueprint,
-			fields: state.blueprint.fields.map(f => f.id === id ? { ...f, ...updates } : f)
-		}
+			blueprint: {
+				...state.blueprint,
+				fields: state.blueprint.fields.map(f => f.id === id ? { ...f, ...updates } : f)
+			}
+		})),
+
+	updateFieldOption: (fieldId, key, value) =>
+		set((state) => ({
+			blueprint: {
+				...state.blueprint,
+				fields: state.blueprint.fields.map(f => 
+					f.id === fieldId 
+						? { ...f, options: { ...f.options, [key]: value } } 
+						: f
+				)
+			}
 		})),
 }));
