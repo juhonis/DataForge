@@ -1,63 +1,90 @@
 import React, { useState } from 'react';
+import { Sidebar } from './components/Sidebar';
 import { useStore } from './store/useStore';
 import { generateData } from './core/engine';
+import { Play, Download, Copy, Database } from 'lucide-react';
 
 function App() {
-	const { blueprint } = useStore();
+	const { blueprint, updateBlueprintName } = useStore();
+	const [count, setCount] = useState(10);
 	const [output, setOutput] = useState<any[]>([]);
 
 	const handleGenerate = () => {
-		const data = generateData(blueprint, 5);
+		const data = generateData(blueprint, count);
 		setOutput(data);
 	};
 
-	return (
-		<div className="min-h-screen bg-slate-900 p-8 text-white">
-			{/* Tailwind Verification Box */}
-			<div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/20 ring-1 ring-white/20">
-				<h1 className="text-3xl font-black tracking-tight">
-					Tailwind Diagnostic: {blueprint.name}
-				</h1>
-				<p className="mt-2 text-indigo-100 italic">
-					If this box is purple/blue with rounded corners, Tailwind is WORKING.
-				</p>
-			</div>
+	const copyToClipboard = () => {
+		navigator.clipboard.writeText(JSON.stringify(output, null, 2));
+	};
 
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-				<section className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-					<h2 className="text-xl font-bold mb-4 text-slate-300">Blueprint Schema</h2>
-					<div className="space-y-3">
-						{blueprint.fields.map(f => (
-							<div key={f.id} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg border border-slate-600">
-								<span className="font-mono text-yellow-400 font-bold">{f.key}</span>
-								<span className="text-xs font-semibold bg-slate-600 px-2 py-1 rounded text-slate-300 uppercase tracking-wider">
-									{f.provider}
-								</span>
-							</div>
-						))}
+	return (
+		<div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans">
+			<Sidebar />
+
+			<main className="flex-1 flex flex-col">
+				{/* Top Bar */}
+				<header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/30">
+					<div className="flex items-center gap-4">
+						<Database className="w-6 h-6 text-indigo-500" />
+						<input 
+							className="bg-transparent text-xl font-bold outline-none focus:border-b border-indigo-500/50"
+							value={blueprint.name}
+							onChange={(e) => updateBlueprintName(e.target.value)}
+						/>
 					</div>
 
-					<button 
-						onClick={handleGenerate}
-						className="mt-6 w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold rounded-lg transition-all active:scale-95"
-					>
-						Run Generator
-					</button>
-				</section>
-
-				<section className="bg-black/40 rounded-xl border border-slate-800 p-4">
-					<h2 className="text-xl font-bold mb-4 text-slate-500">Output Preview</h2>
-					{output.length > 0 ? (
-						<pre className="text-xs text-emerald-400 font-mono leading-relaxed overflow-auto max-h-[400px]">
-							{JSON.stringify(output, null, 2)}
-						</pre>
-					) : (
-						<div className="h-64 flex items-center justify-center text-slate-600 border-2 border-dashed border-slate-800 rounded-lg">
-							Click "Run Generator" to see output
+					<div className="flex items-center gap-4">
+						<div className="flex items-center gap-2 bg-slate-800 rounded-lg px-3 py-1.5 border border-slate-700">
+							<span className="text-xs text-slate-500 font-medium">Count:</span>
+							<input 
+								type="number"
+								className="w-12 bg-transparent outline-none text-sm font-bold"
+								value={count}
+								onChange={(e) => setCount(parseInt(e.target.value) || 1)}
+							/>
 						</div>
-					)}
-				</section>
-			</div>
+						
+						<button 
+							onClick={handleGenerate}
+							className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-bold transition-all"
+						>
+							<Play className="w-4 h-4 fill-current" />
+							Generate
+						</button>
+					</div>
+				</header>
+
+				{/* Preview Area */}
+				<div className="flex-1 p-8 overflow-hidden flex flex-col">
+					<div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+						<div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-800/50">
+							<span className="text-xs font-mono text-slate-500 uppercase tracking-widest">JSON Output</span>
+							<div className="flex gap-2">
+								<button onClick={copyToClipboard} className="p-1.5 hover:bg-slate-700 rounded text-slate-400" title="Copy">
+									<Copy className="w-4 h-4" />
+								</button>
+								<button className="p-1.5 hover:bg-slate-700 rounded text-slate-400" title="Download">
+									<Download className="w-4 h-4" />
+								</button>
+							</div>
+						</div>
+						
+						<div className="flex-1 overflow-auto p-6 font-mono text-sm leading-relaxed text-emerald-400">
+							{output.length > 0 ? (
+								<pre>{JSON.stringify(output, null, 2)}</pre>
+							) : (
+								<div className="h-full flex flex-col items-center justify-center text-slate-600 gap-4">
+									<div className="w-16 h-16 border-4 border-dashed border-slate-800 rounded-full flex items-center justify-center">
+										<Play className="w-6 h-6" />
+									</div>
+									<p>Click generate to see your data forge in action</p>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			</main>
 		</div>
 	);
 }
