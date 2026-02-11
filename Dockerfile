@@ -3,14 +3,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies first (better caching)
-COPY package*.json ./
+# Copy package files from application folder
+COPY application/package*.json ./
+
 RUN npm install
 
-# Copy the rest of the code
-COPY . .
+COPY application/ .
 
-# Vite default port
 EXPOSE 5173
 
 CMD ["npm", "run", "dev", "--", "--host"]

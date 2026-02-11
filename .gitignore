@@ -1,0 +1,34 @@
+# Dependency directories
+node_modules/
+application/node_modules/
+
+# Build outputs
+dist/
+application/dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+application/npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Docker
+.docker/

@@ -1,27 +1,18 @@
 ```TEXT
 DataForge/
-├── .github/
-│   └── workflows/          # GitHub Actions for Auto-deploy
-├── docs/                   # Detailed documentation
-│   ├── architecture.md
-│   └── custom-blueprints.md
-├── public/                 # Static assets (logo, etc.)
-├── src/
-│   ├── assets/             # Images/Styles
-│   ├── components/         # Small UI pieces (Buttons, Inputs)
-│   ├── core/               # THE BRAIN: Logic to parse blueprints
-│   │   ├── generator.js    # Function that loops through schemas
-│   │   └── faker-bridge.js # Mapping strings to Faker methods
-│   ├── modules/            # UI Sections (Sidebar, Editor, Previewer)
-│   ├── store/              # State management (Zustand or Context)
-│   │   └── blueprintStore.js
-│   ├── App.jsx
-│   └── main.jsx
-├── .gitignore
-├── Dockerfile              # For local testing
-├── docker-compose.yml      # For easy "one-command" startup
-├── index.html
-├── package.json
-├── tailwind.config.js
-└── vite.config.js
+├── application/             # All React/Vite/Tailwind code
+│   ├── src/
+│   │   ├── components/      # UI primitives (Buttons, Inputs)
+│   │   ├── core/            # The logic engine
+│   │   ├── modules/         # High-level features (Editor, Preview)
+│   │   └── store/           # State management
+│   ├── package.json
+│   ├── vite.config.js
+│   └── ... (other Vite files)
+├── docs/                    # Architecture and User Guides
+├── .github/                 # Workflows (updated to point to /application)
+├── Dockerfile               # Updated to build from /application
+├── docker-compose.yml       # Orchestrates the container
+├── LICENSE
+└── README.md
 ```
