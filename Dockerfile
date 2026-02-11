@@ -1,15 +1,17 @@
-# Use Node 20
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files from application folder
+# 1. Copy package files first
 COPY application/package*.json ./
 
+# 2. Install dependencies
 RUN npm install
 
+# 3. Copy everything else from application/
 COPY application/ .
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# Use --host to expose to Docker, and --clearScreen false to see all logs
+CMD ["npm", "run", "dev", "--", "--host", "--clearScreen", "false"]
