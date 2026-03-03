@@ -52,19 +52,22 @@ export const EcommerceSidebar: React.FC = () => {
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
-    addBrandModel,
-    removeBrandModel,
-    toggleBrandModel,
-    selectAllBrandModels,
-    deselectAllBrandModels,
-  } = useStore();
+  addBrandModel,
+  removeBrandModel,
+  updateBrandModel,
+  toggleBrandModel,
+  selectAllBrandModels,
+  deselectAllBrandModels,
+} = useStore();
 
   // Brand state
   const [newBrandName, setNewBrandName] = useState('');
   const [editingBrand, setEditingBrand] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
-  const [newModelName, setNewModelName] = useState('');
+const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
+const [newModelName, setNewModelName] = useState('');
+const [editingModel, setEditingModel] = useState<{ brandId: string; model: string } | null>(null);
+const [editModelName, setEditModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
@@ -208,6 +211,24 @@ export const EcommerceSidebar: React.FC = () => {
   const startEditingBrandModels = (brandId: string) => {
     setEditingBrandModels(brandId);
     setNewModelName('');
+  };
+
+  const startEditingModelName = (brandId: string, model: string) => {
+    setEditingModel({ brandId, model });
+    setEditModelName(model);
+  };
+
+  const saveModelEdit = () => {
+    if (editingModel && editModelName.trim() && editModelName !== editingModel.model) {
+      updateBrandModel(editingModel.brandId, editingModel.model, editModelName.trim());
+      setEditingModel(null);
+      setEditModelName('');
+    }
+  };
+
+  const cancelModelEdit = () => {
+    setEditingModel(null);
+    setEditModelName('');
   };
 
   return (
@@ -505,44 +526,84 @@ export const EcommerceSidebar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Model List with Checkboxes */}
-                  <div className="pt-2 space-y-2">
-                    {brand.models.length > 0 ? (
-                      <div className="space-y-1">
-                        {brand.models.map((model) => (
-                          <div
-                            key={model}
-                            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-800/50 transition-colors group"
-                          >
-                            <button
-                              onClick={() => toggleBrandModel(brand.id, model)}
-                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                                brand.selectedModels.includes(model)
-                                  ? 'bg-indigo-600 border-indigo-500'
-                                  : 'border-slate-600 hover:border-slate-500'
-                              }`}
-                            >
-                              {brand.selectedModels.includes(model) && (
-                                <Check className="w-2.5 h-2.5 text-white" />
-                              )}
-                            </button>
-                            <span className={`flex-1 text-sm ${
-                              brand.selectedModels.includes(model) 
-                                ? 'text-slate-300' 
-                                : 'text-slate-500'
-                            }`}>
-                              {model}
-                            </span>
-                            <button
-                              onClick={() => removeBrandModel(brand.id, model)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
+                      {/* Model List with Checkboxes */}
+                      <div className="pt-2 space-y-2">
+                        {brand.models.length > 0 ? (
+                          <div className="space-y-1">
+                            {brand.models.map((model) => (
+                              <div
+                                key={model}
+                                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-800/50 transition-colors group"
+                              >
+                                <button
+                                  onClick={() => toggleBrandModel(brand.id, model)}
+                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                    brand.selectedModels.includes(model)
+                                      ? 'bg-indigo-600 border-indigo-500'
+                                      : 'border-slate-600 hover:border-slate-500'
+                                  }`}
+                                >
+                                  {brand.selectedModels.includes(model) && (
+                                    <Check className="w-2.5 h-2.5 text-white" />
+                                  )}
+                                </button>
+                                
+                                {editingModel?.brandId === brand.id && editingModel?.model === model ? (
+                                  <div className="flex-1 flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={editModelName}
+                                      onChange={(e) => setEditModelName(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') saveModelEdit();
+                                        if (e.key === 'Escape') cancelModelEdit();
+                                      }}
+                                      autoFocus
+                                      className="flex-1 bg-slate-950 border border-indigo-500 rounded px-2 py-1 text-sm outline-none text-slate-200"
+                                    />
+                                    <button
+                                      onClick={saveModelEdit}
+                                      className="p-1 text-emerald-400 hover:text-emerald-300"
+                                    >
+                                      <Save className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={cancelModelEdit}
+                                      className="p-1 text-red-400 hover:text-red-300"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span
+                                      className={`flex-1 text-sm cursor-pointer ${
+                                        brand.selectedModels.includes(model)
+                                          ? 'text-slate-300'
+                                          : 'text-slate-500'
+                                      }`}
+                                      onClick={() => startEditingModelName(brand.id, model)}
+                                    >
+                                      {model}
+                                    </span>
+                                    <button
+                                      onClick={() => startEditingModelName(brand.id, model)}
+                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-slate-300 transition-all"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeBrandModel(brand.id, model)}
+                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
+                        ) : (
                       <div className="text-xs text-slate-500 italic py-2">
                         No models defined
                       </div>
