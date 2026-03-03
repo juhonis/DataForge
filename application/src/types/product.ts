@@ -39,6 +39,8 @@ export interface AttributeDefinition {
 export interface Brand {
   id: string;
   name: string;
+  models: string[];  // All available models for this brand
+  selectedModels: string[];  // Models currently selected for generation
 }
 
 export interface GenerationConfig {

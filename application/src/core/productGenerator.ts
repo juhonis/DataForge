@@ -50,30 +50,39 @@ const generateAttributes = (attributeDefs: AttributeDefinition[]): Record<string
 };
 
 const generateProductName = (
-  brand: string,
+  brand: Brand,
   category: CategoryTemplate,
   attributes: Record<string, any>
 ): string => {
-  const variant = getRandomItem(category.variants);
+  // Use only selected models for this brand
+  const availableModels = brand.selectedModels.length > 0 
+    ? brand.selectedModels 
+    : (brand.models.length > 0 ? brand.models : []);
   
+  const model = availableModels.length > 0 
+    ? getRandomItem(availableModels)
+    : (category.variants.length > 0 ? getRandomItem(category.variants) : '');
+
+  // For laptops: Brand + Model + Screen Size
   if (category.id === 'laptops') {
     const screenSize = attributes['screenSize'] || getRandomItem(['13 Inch', '14 Inch', '15 Inch', '16 Inch']);
-    const modelType = getRandomItem(category.variants);
-    return `${brand} ${modelType} ${screenSize}`;
+    return `${brand.name} ${model} ${screenSize}`;
   }
-  
+
+  // For audio: Brand + Model + Variant
   if (category.id === 'audio') {
-    const modelType = getRandomItem(['Studio', 'Bass', 'Noise']);
-    return `${brand} ${modelType} ${variant}`;
+    const variant = category.variants.length > 0 ? getRandomItem(category.variants) : '';
+    return `${brand.name} ${model} ${variant}`.trim();
   }
-  
+
+  // For accessories: Brand + Model + Device Type
   if (category.id === 'accessories') {
-    const connector = getRandomItem(category.variants);
     const deviceType = getRandomItem(['Cable', 'Hub', 'Adapter']);
-    return `${brand} ${connector} ${deviceType}`;
+    return `${brand.name} ${model} ${deviceType}`;
   }
-  
-  return `${brand} ${category.models[0] || ''} ${variant}`.trim();
+
+  // Default naming: Brand + Model
+  return `${brand.name} ${model}`.trim();
 };
 
 const generateDimensions = (category: CategoryTemplate) => {
@@ -129,9 +138,9 @@ export const generateProduct = (
 ): Product => {
   const id = generateUUID();
   const attributes = generateAttributes(category.attributes);
-  const name = generateProductName(brand.name, category, attributes);
+  const name = generateProductName(brand, category, attributes);
   const dimensions = generateDimensions(category);
-  
+
   return {
     id,
     brand: brand.name,

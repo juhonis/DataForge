@@ -33,11 +33,19 @@ interface StoreState {
   removeBrand: (id: string) => void;
   updateBrand: (id: string, name: string) => void;
   resetBrands: () => void;
+  addBrandModel: (brandId: string, model: string) => void;
+  removeBrandModel: (brandId: string, model: string) => void;
+  updateBrandModel: (brandId: string, oldModel: string, newModel: string) => void;
 
   selectedBrands: string[];
   toggleBrand: (id: string) => void;
   selectAllBrands: () => void;
   deselectAllBrands: () => void;
+  
+  // Model selection
+  toggleBrandModel: (brandId: string, model: string) => void;
+  selectAllBrandModels: (brandId: string) => void;
+  deselectAllBrandModels: (brandId: string) => void;
 
   // Generated products
   products: Product[];
@@ -51,6 +59,8 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
   return category.defaultBrands.map((name) => ({
     id: crypto.randomUUID(),
     name,
+    models: [...category.models],
+    selectedModels: [...category.models], // All models selected by default
   }));
 };
 
@@ -237,9 +247,12 @@ export const useStore = create<StoreState>((set, get) => ({
   // Brands
   brands: createInitialBrands(defaultCategory),
   addBrand: (name) => {
+    const { selectedCategory } = get();
     const newBrand: Brand = {
       id: crypto.randomUUID(),
       name,
+      models: [...selectedCategory.models],
+      selectedModels: [...selectedCategory.models],
     };
     set((state) => ({
       brands: [...state.brands, newBrand],
@@ -266,6 +279,40 @@ export const useStore = create<StoreState>((set, get) => ({
     });
   },
   
+  addBrandModel: (brandId, model) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, models: [...b.models, model] }
+          : b
+      ),
+    }));
+  },
+  
+  removeBrandModel: (brandId, model) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { 
+              ...b, 
+              models: b.models.filter(m => m !== model),
+              selectedModels: b.selectedModels.filter(m => m !== model)
+            }
+          : b
+      ),
+    }));
+  },
+  
+  updateBrandModel: (brandId, oldModel, newModel) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, models: b.models.map(m => m === oldModel ? newModel : m) }
+          : b
+      ),
+    }));
+  },
+  
   selectedBrands: createInitialBrands(defaultCategory).map(b => b.id),
   toggleBrand: (id) => {
     set((state) => ({
@@ -283,6 +330,42 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ selectedBrands: [] });
   },
   
+  // Model selection
+  toggleBrandModel: (brandId, model) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? {
+              ...b,
+              selectedModels: b.selectedModels.includes(model)
+                ? b.selectedModels.filter(m => m !== model)
+                : [...b.selectedModels, model]
+            }
+          : b
+      ),
+    }));
+  },
+  
+  selectAllBrandModels: (brandId) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, selectedModels: [...b.models] }
+          : b
+      ),
+    }));
+  },
+  
+  deselectAllBrandModels: (brandId) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, selectedModels: [] }
+          : b
+      ),
+    }));
+  },
+
   // Products
   products: [],
   setProducts: (products) => set({ products }),

@@ -14,12 +14,14 @@ import {
   Save,
   X,
   Settings2,
-  Image,
   Hash,
   Type,
   List,
-  GripVertical,
-  MoreHorizontal
+  Car,
+  Box,
+  Layers,
+  MoreVertical,
+  ChevronLeft
 } from 'lucide-react';
 
 // Attribute type options
@@ -50,12 +52,19 @@ export const EcommerceSidebar: React.FC = () => {
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
+    addBrandModel,
+    removeBrandModel,
+    toggleBrandModel,
+    selectAllBrandModels,
+    deselectAllBrandModels,
   } = useStore();
 
   // Brand state
   const [newBrandName, setNewBrandName] = useState('');
   const [editingBrand, setEditingBrand] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
+  const [newModelName, setNewModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
@@ -74,11 +83,11 @@ export const EcommerceSidebar: React.FC = () => {
   const [editSkuPrefix, setEditSkuPrefix] = useState('');
   
   // Expand/collapse sections
-  const [expandedSections, setExpandedSections] = useState({
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     category: true,
     brands: true,
-    attributes: true,
   });
+  const [expandedBrands, setExpandedBrands] = useState<Record<string, boolean>>({});
 
   const handleAddBrand = () => {
     if (newBrandName.trim()) {
@@ -105,8 +114,12 @@ export const EcommerceSidebar: React.FC = () => {
     setEditName('');
   };
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
+  const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleBrandExpand = (brandId: string) => {
+    setExpandedBrands(prev => ({ ...prev, [brandId]: !prev[brandId] }));
   };
 
   const startEditingCategory = () => {
@@ -185,14 +198,29 @@ export const EcommerceSidebar: React.FC = () => {
     }
   };
 
+  const handleAddModel = (brandId: string) => {
+    if (newModelName.trim()) {
+      addBrandModel(brandId, newModelName.trim());
+      setNewModelName('');
+    }
+  };
+
+  const startEditingBrandModels = (brandId: string) => {
+    setEditingBrandModels(brandId);
+    setNewModelName('');
+  };
+
   return (
-    <aside className="w-96 border-r border-slate-800 bg-slate-900 flex flex-col overflow-hidden shrink-0">
+    <aside className="w-1/2 min-w-[600px] border-r border-slate-800 bg-slate-900 flex flex-col overflow-hidden shrink-0">
       {/* Header */}
-      <div className="p-5 border-b border-slate-800 bg-slate-900/50">
+      <div className="p-5 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
         <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-400">
           <Package className="w-4 h-4 text-indigo-500" />
-          Product Generator
+          Product Configuration
         </h2>
+        <div className="text-xs text-slate-500">
+          {selectedCategory.name}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -204,7 +232,7 @@ export const EcommerceSidebar: React.FC = () => {
           >
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
               <Tag className="w-3 h-3" />
-              Category
+              Category Settings
             </span>
             {expandedSections.category ? (
               <ChevronDown className="w-4 h-4 text-slate-500" />
@@ -274,35 +302,37 @@ export const EcommerceSidebar: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-slate-500 mb-1">SKU Prefix</div>
-                      <div className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded text-sm font-mono text-indigo-400">
-                        {selectedCategory.skuPrefix}-
-                      </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-slate-500 mb-1">SKU Prefix</div>
+                    <div className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded text-sm font-mono text-indigo-400">
+                      {selectedCategory.skuPrefix}-
                     </div>
-                    <button
-                      onClick={startEditingCategory}
-                      className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-300 transition-all"
-                    >
-                      <Settings2 className="w-4 h-4" />
-                    </button>
                   </div>
+                  <button
+                    onClick={startEditingCategory}
+                    className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-300 transition-all"
+                  >
+                    <Settings2 className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Brands Section */}
+        {/* Brands & Models Section */}
         <div className="border-b border-slate-800">
           <button
             onClick={() => toggleSection('brands')}
             className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
           >
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Brands
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <Car className="w-3 h-3" />
+              Brands & Models
+              <span className="ml-2 px-2 py-0.5 bg-slate-800 rounded-full text-[10px] text-slate-500">
+                {brands.length}
+              </span>
             </span>
             {expandedSections.brands ? (
               <ChevronDown className="w-4 h-4 text-slate-500" />
@@ -312,7 +342,7 @@ export const EcommerceSidebar: React.FC = () => {
           </button>
 
           {expandedSections.brands && (
-            <div className="px-5 pb-4 space-y-3">
+            <div className="px-5 pb-4 space-y-4">
               {/* Add Brand */}
               <div className="flex gap-2">
                 <input
@@ -362,71 +392,215 @@ export const EcommerceSidebar: React.FC = () => {
                 </div>
               </div>
 
-              {/* Brand List */}
-              <div className="space-y-1">
+              {/* Brand List with Models */}
+              <div className="space-y-3">
                 {brands.map((brand) => (
                   <div
                     key={brand.id}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50 transition-colors group"
+                    className={`border rounded-lg transition-all ${
+                      selectedBrands.includes(brand.id)
+                        ? 'border-indigo-500/50 bg-slate-800/30'
+                        : 'border-slate-700/50 bg-slate-800/20'
+                    }`}
                   >
-                    <button
-                      onClick={() => toggleBrand(brand.id)}
-                      className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                        selectedBrands.includes(brand.id)
-                          ? 'bg-indigo-600 border-indigo-500'
-                          : 'border-slate-600 hover:border-slate-500'
-                      }`}
-                    >
-                      {selectedBrands.includes(brand.id) && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
-                    </button>
+                    {/* Brand Header */}
+                    <div className="flex items-center gap-2 p-3">
+                      <button
+                        onClick={() => toggleBrand(brand.id)}
+                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                          selectedBrands.includes(brand.id)
+                            ? 'bg-indigo-600 border-indigo-500'
+                            : 'border-slate-600 hover:border-slate-500'
+                        }`}
+                      >
+                        {selectedBrands.includes(brand.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </button>
 
-                    {editingBrand === brand.id ? (
-                      <div className="flex-1 flex items-center gap-2">
+                      {editingBrand === brand.id ? (
+                        <div className="flex-1 flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveBrandEdit();
+                              if (e.key === 'Escape') cancelBrandEdit();
+                            }}
+                            autoFocus
+                            className="flex-1 bg-slate-950 border border-indigo-500 rounded px-2 py-1 text-sm outline-none text-slate-200"
+                          />
+                          <button
+                            onClick={saveBrandEdit}
+                            className="p-1 text-emerald-400 hover:text-emerald-300"
+                          >
+                            <Save className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={cancelBrandEdit}
+                            className="p-1 text-red-400 hover:text-red-300"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                    ) : (
+                      <>
+                        <span className="flex-1 text-sm font-bold text-slate-300">
+                          {brand.name}
+                        </span>
+                        <span className={`text-xs ${
+                          brand.selectedModels.length > 0 ? 'text-indigo-400' : 'text-slate-500'
+                        }`}>
+                          {brand.selectedModels.length}/{brand.models.length} models
+                        </span>
+                          <button
+                            onClick={() => startEditingBrand(brand)}
+                            className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded transition-all"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => removeBrand(brand.id)}
+                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => toggleBrandExpand(brand.id)}
+                            className="p-1.5 text-slate-500 hover:text-slate-300 rounded transition-all"
+                          >
+                            {expandedBrands[brand.id] ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+              {/* Models Section */}
+              {expandedBrands[brand.id] && (
+                <div className="px-3 pb-3 border-t border-slate-700/30">
+                  {/* Model Selection Header */}
+                  <div className="pt-2 pb-1 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">
+                      Select Models ({brand.selectedModels.length}/{brand.models.length})
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => selectAllBrandModels(brand.id)}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 px-1.5 py-0.5 rounded hover:bg-slate-800/50 transition-colors"
+                      >
+                        All
+                      </button>
+                      <span className="text-slate-600">|</span>
+                      <button
+                        onClick={() => deselectAllBrandModels(brand.id)}
+                        className="text-[10px] text-slate-500 hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-slate-800/50 transition-colors"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Model List with Checkboxes */}
+                  <div className="pt-2 space-y-2">
+                    {brand.models.length > 0 ? (
+                      <div className="space-y-1">
+                        {brand.models.map((model) => (
+                          <div
+                            key={model}
+                            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-800/50 transition-colors group"
+                          >
+                            <button
+                              onClick={() => toggleBrandModel(brand.id, model)}
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                brand.selectedModels.includes(model)
+                                  ? 'bg-indigo-600 border-indigo-500'
+                                  : 'border-slate-600 hover:border-slate-500'
+                              }`}
+                            >
+                              {brand.selectedModels.includes(model) && (
+                                <Check className="w-2.5 h-2.5 text-white" />
+                              )}
+                            </button>
+                            <span className={`flex-1 text-sm ${
+                              brand.selectedModels.includes(model) 
+                                ? 'text-slate-300' 
+                                : 'text-slate-500'
+                            }`}>
+                              {model}
+                            </span>
+                            <button
+                              onClick={() => removeBrandModel(brand.id, model)}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 italic py-2">
+                        No models defined
+                      </div>
+                    )}
+
+                    {/* Add Model */}
+                    {editingBrandModels === brand.id ? (
+                      <div className="flex gap-2 mt-2">
                         <input
                           type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Model name..."
+                          value={newModelName}
+                          onChange={(e) => setNewModelName(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveBrandEdit();
-                            if (e.key === 'Escape') cancelBrandEdit();
+                            if (e.key === 'Enter') {
+                              handleAddModel(brand.id);
+                              setNewModelName('');
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingBrandModels(null);
+                              setNewModelName('');
+                            }
                           }}
                           autoFocus
-                          className="flex-1 bg-slate-950 border border-indigo-500 rounded px-2 py-1 text-sm outline-none text-slate-200"
+                          className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 placeholder:text-slate-600"
                         />
                         <button
-                          onClick={saveBrandEdit}
-                          className="p-1 text-emerald-400 hover:text-emerald-300"
+                          onClick={() => {
+                            handleAddModel(brand.id);
+                            setNewModelName('');
+                          }}
+                          disabled={!newModelName.trim()}
+                          className="p-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-lg transition-all"
                         >
-                          <Save className="w-3 h-3" />
+                          <Save className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={cancelBrandEdit}
-                          className="p-1 text-red-400 hover:text-red-300"
+                          onClick={() => {
+                            setEditingBrandModels(null);
+                            setNewModelName('');
+                          }}
+                          className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
-                      <>
-                        <span className="flex-1 text-sm text-slate-300 truncate">
-                          {brand.name}
-                        </span>
-                        <button
-                          onClick={() => startEditingBrand(brand)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-slate-300 transition-all"
-                        >
-                          <Edit3 className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => removeBrand(brand.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </>
+                      <button
+                        onClick={() => startEditingBrandModels(brand.id)}
+                        className="mt-2 flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Model
+                      </button>
                     )}
+                  </div>
+                </div>
+              )}
                   </div>
                 ))}
               </div>
@@ -441,7 +615,7 @@ export const EcommerceSidebar: React.FC = () => {
             className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
           >
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Settings2 className="w-3 h-3" />
+              <Layers className="w-3 h-3" />
               Attributes
               <span className="ml-2 px-2 py-0.5 bg-slate-800 rounded-full text-[10px] text-slate-500">
                 {selectedCategory.attributes.length}

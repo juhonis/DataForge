@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
 import { useStore } from './store/useStore';
 import { generateProducts, downloadJSON } from './core/productGenerator';
-import { Play, Download, Copy, Database, Code2, Trash2, Package } from 'lucide-react';
+import { Play, Download, Copy, Database, Trash2, Package } from 'lucide-react';
 
 function App() {
   const { 
