@@ -32,3 +32,6 @@ application/npm-debug.log*
 
 # Docker
 .docker/
+
+/examples
+
