@@ -21,7 +21,8 @@ import {
   Box,
   Layers,
   MoreVertical,
-  ChevronLeft
+  ChevronLeft,
+  DollarSign
 } from 'lucide-react';
 
 // Attribute type options
@@ -58,6 +59,11 @@ export const EcommerceSidebar: React.FC = () => {
   toggleBrandModel,
   selectAllBrandModels,
   deselectAllBrandModels,
+  updateCategoryPriceRange,
+  updateBrandPriceRange,
+  removeBrandPriceRange,
+  setModelPrice,
+  removeModelPrice,
 } = useStore();
 
   // Brand state
@@ -88,9 +94,20 @@ const [editModelName, setEditModelName] = useState('');
   // Expand/collapse sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     category: true,
+    pricing: true,
     brands: true,
   });
   const [expandedBrands, setExpandedBrands] = useState<Record<string, boolean>>({});
+  
+  // Price editing state
+  const [editingCategoryPrice, setEditingCategoryPrice] = useState(false);
+  const [editCatPriceMin, setEditCatPriceMin] = useState(selectedCategory.priceRange.min);
+  const [editCatPriceMax, setEditCatPriceMax] = useState(selectedCategory.priceRange.max);
+  const [editingBrandPrice, setEditingBrandPrice] = useState<string | null>(null);
+  const [editBrandPriceMin, setEditBrandPriceMin] = useState<number>(0);
+  const [editBrandPriceMax, setEditBrandPriceMax] = useState<number>(1000);
+  const [editingModelPrice, setEditingModelPrice] = useState<{ brandId: string; model: string } | null>(null);
+  const [editModelPrice, setEditModelPrice] = useState<number>(0);
 
   const handleAddBrand = () => {
     if (newBrandName.trim()) {
@@ -146,6 +163,65 @@ const [editModelName, setEditModelName] = useState('');
     setEditingCategory(false);
     setEditCategoryName('');
     setEditSkuPrefix('');
+  };
+
+  // Price editing handlers
+  const startEditingCategoryPrice = () => {
+    setEditingCategoryPrice(true);
+    setEditCatPriceMin(selectedCategory.priceRange.min);
+    setEditCatPriceMax(selectedCategory.priceRange.max);
+  };
+
+  const saveCategoryPriceEdit = () => {
+    if (editCatPriceMin >= 0 && editCatPriceMax > editCatPriceMin) {
+      updateCategoryPriceRange(selectedCategory.id, editCatPriceMin, editCatPriceMax);
+      setEditingCategoryPrice(false);
+    }
+  };
+
+  const cancelCategoryPriceEdit = () => {
+    setEditingCategoryPrice(false);
+  };
+
+  const startEditingBrandPrice = (brand: Brand) => {
+    setEditingBrandPrice(brand.id);
+    setEditBrandPriceMin(brand.priceRange?.min ?? selectedCategory.priceRange.min);
+    setEditBrandPriceMax(brand.priceRange?.max ?? selectedCategory.priceRange.max);
+  };
+
+  const saveBrandPriceEdit = (brandId: string) => {
+    if (editBrandPriceMin >= 0 && editBrandPriceMax > editBrandPriceMin) {
+      updateBrandPriceRange(brandId, editBrandPriceMin, editBrandPriceMax);
+      setEditingBrandPrice(null);
+    }
+  };
+
+  const cancelBrandPriceEdit = () => {
+    setEditingBrandPrice(null);
+  };
+
+  const removeBrandPrice = (brandId: string) => {
+    removeBrandPriceRange(brandId);
+  };
+
+  const startEditingModelPrice = (brandId: string, model: string, brand: Brand) => {
+    setEditingModelPrice({ brandId, model });
+    setEditModelPrice(brand.modelPrices[model] ?? 0);
+  };
+
+  const saveModelPriceEdit = () => {
+    if (editingModelPrice && editModelPrice > 0) {
+      setModelPrice(editingModelPrice.brandId, editingModelPrice.model, editModelPrice);
+      setEditingModelPrice(null);
+    }
+  };
+
+  const cancelModelPriceEdit = () => {
+    setEditingModelPrice(null);
+  };
+
+  const removeModelExactPrice = (brandId: string, model: string) => {
+    removeModelPrice(brandId, model);
   };
 
   const startEditingAttr = (attr: AttributeDefinition) => {
@@ -338,23 +414,196 @@ const [editModelName, setEditModelName] = useState('');
                   </button>
                 </div>
               )}
-            </div>
-          )}
         </div>
+      )}
+    </div>
 
-        {/* Brands & Models Section */}
-        <div className="border-b border-slate-800">
-          <button
-            onClick={() => toggleSection('brands')}
-            className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
-          >
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Car className="w-3 h-3" />
-              Brands & Models
-              <span className="ml-2 px-2 py-0.5 bg-slate-800 rounded-full text-[10px] text-slate-500">
-                {brands.length}
-              </span>
-            </span>
+    {/* Pricing Section */}
+    <div className="border-b border-slate-800">
+      <button
+        onClick={() => toggleSection('pricing')}
+        className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+      >
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <DollarSign className="w-3 h-3" />
+          Pricing
+          <span className="ml-2 px-2 py-0.5 bg-slate-800 rounded-full text-[10px] text-slate-500">
+            ${selectedCategory.priceRange.min}-${selectedCategory.priceRange.max}
+          </span>
+        </span>
+        {expandedSections.pricing ? (
+          <ChevronDown className="w-4 h-4 text-slate-500" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-slate-500" />
+        )}
+      </button>
+
+      {expandedSections.pricing && (
+        <div className="px-5 pb-4 space-y-3">
+          {/* Category Price Range */}
+          <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-slate-300">Category Price Range</span>
+              {!editingCategoryPrice && (
+                <button
+                  onClick={startEditingCategoryPrice}
+                  className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded transition-all"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            
+            {editingCategoryPrice ? (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Min $</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={editCatPriceMin}
+                      onChange={(e) => setEditCatPriceMin(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Max $</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={editCatPriceMax}
+                      onChange={(e) => setEditCatPriceMax(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveCategoryPriceEdit}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelCategoryPriceEdit}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-bold transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400">
+                ${selectedCategory.priceRange.min} - ${selectedCategory.priceRange.max}
+              </div>
+            )}
+          </div>
+
+          {/* Brand-Specific Pricing */}
+          <div className="space-y-2">
+            <div className="text-[10px] uppercase font-bold text-slate-500">Brand Overrides</div>
+            {brands.map((brand) => (
+              <div
+                key={brand.id}
+                className="p-3 bg-slate-800/30 rounded-lg border border-slate-700/30"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-300">{brand.name}</span>
+                  <div className="flex items-center gap-1">
+                    {brand.priceRange ? (
+                      <>
+                        <span className="text-xs text-indigo-400">
+                          ${brand.priceRange.min}-${brand.priceRange.max}
+                        </span>
+                        <button
+                          onClick={() => startEditingBrandPrice(brand)}
+                          className="p-1 text-slate-500 hover:text-slate-300 transition-all"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => removeBrandPrice(brand.id)}
+                          className="p-1 text-slate-500 hover:text-red-400 transition-all"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => startEditingBrandPrice(brand)}
+                        className="text-xs text-slate-500 hover:text-indigo-400 transition-colors"
+                      >
+                        + Add
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {editingBrandPrice === brand.id && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Min $</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editBrandPriceMin}
+                          onChange={(e) => setEditBrandPriceMin(parseInt(e.target.value) || 0)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Max $</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={editBrandPriceMax}
+                          onChange={(e) => setEditBrandPriceMax(parseInt(e.target.value) || 0)}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveBrandPriceEdit(brand.id)}
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold transition-all"
+                      >
+                        <Save className="w-3 h-3" />
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelBrandPriceEdit}
+                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold transition-all"
+                      >
+                        <X className="w-3 h-3" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Brands & Models Section */}
+    <div className="border-b border-slate-800">
+      <button
+        onClick={() => toggleSection('brands')}
+        className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+      >
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <Car className="w-3 h-3" />
+          Brands & Models
+          <span className="ml-2 px-2 py-0.5 bg-slate-800 rounded-full text-[10px] text-slate-500">
+            {brands.length}
+          </span>
+        </span>
             {expandedSections.brands ? (
               <ChevronDown className="w-4 h-4 text-slate-500" />
             ) : (
@@ -574,30 +823,90 @@ const [editModelName, setEditModelName] = useState('');
                                       <X className="w-3 h-3" />
                                     </button>
                                   </div>
-                                ) : (
-                                  <>
-                                    <span
-                                      className={`flex-1 text-sm cursor-pointer ${
-                                        brand.selectedModels.includes(model)
-                                          ? 'text-slate-300'
-                                          : 'text-slate-500'
-                                      }`}
-                                      onClick={() => startEditingModelName(brand.id, model)}
-                                    >
-                                      {model}
-                                    </span>
-                                    <button
-                                      onClick={() => startEditingModelName(brand.id, model)}
-                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-slate-300 transition-all"
-                                    >
-                                      <Edit3 className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => removeBrandModel(brand.id, model)}
-                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </button>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <span
+                          className={`text-sm cursor-pointer ${
+                            brand.selectedModels.includes(model)
+                              ? 'text-slate-300'
+                              : 'text-slate-500'
+                          }`}
+                          onClick={() => startEditingModelName(brand.id, model)}
+                        >
+                          {model}
+                        </span>
+                        {editingModelPrice?.brandId === brand.id && editingModelPrice?.model === model ? (
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className="text-xs text-slate-500">$</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={editModelPrice}
+                              onChange={(e) => setEditModelPrice(parseInt(e.target.value) || 0)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveModelPriceEdit();
+                                if (e.key === 'Escape') cancelModelPriceEdit();
+                              }}
+                              autoFocus
+                              className="w-16 bg-slate-950 border border-indigo-500 rounded px-1.5 py-0.5 text-xs outline-none text-slate-200"
+                            />
+                            <button
+                              onClick={saveModelPriceEdit}
+                              className="p-0.5 text-emerald-400 hover:text-emerald-300"
+                            >
+                              <Save className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={cancelModelPriceEdit}
+                              className="p-0.5 text-red-400 hover:text-red-300"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {brand.modelPrices[model] ? (
+                              <>
+                                <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">
+                                  ${brand.modelPrices[model]}
+                                </span>
+                                <button
+                                  onClick={() => startEditingModelPrice(brand.id, model, brand)}
+                                  className="p-0.5 text-slate-500 hover:text-slate-300"
+                                >
+                                  <Edit3 className="w-2.5 h-2.5" />
+                                </button>
+                                <button
+                                  onClick={() => removeModelExactPrice(brand.id, model)}
+                                  className="p-0.5 text-slate-500 hover:text-red-400"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => startEditingModelPrice(brand.id, model, brand)}
+                                className="text-[10px] text-slate-600 hover:text-indigo-400 transition-colors"
+                              >
+                                + Set price
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => startEditingModelName(brand.id, model)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-slate-300 transition-all"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => removeBrandModel(brand.id, model)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-all"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                                   </>
                                 )}
                               </div>

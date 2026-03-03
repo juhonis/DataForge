@@ -42,6 +42,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'OnePlus': ['OnePlus 12', 'OnePlus 12R', 'OnePlus Open', 'OnePlus Nord', 'OnePlus 11'],
     },
     variants: ['Mini', 'Pro', 'Ultra', 'X'],
+    priceRange: { min: 299, max: 1599 },
     attributes: [
       {
         key: 'os',
@@ -79,6 +80,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Asus': ['ZenBook', 'VivoBook', 'ROG', 'TUF', 'ProArt'],
     },
     variants: ['Pro', 'Noob'],
+    priceRange: { min: 599, max: 3999 },
     attributes: [
       {
         key: 'cpu',
@@ -121,6 +123,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Sennheiser': ['Momentum 4', 'Momentum True Wireless', 'HD 660S', 'IE 900', 'Ambeo'],
     },
     variants: ['Buds', 'Headphones'],
+    priceRange: { min: 49, max: 499 },
     attributes: [
       {
         key: 'type',
@@ -155,6 +158,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Logi': ['MX Keys', 'MX Master', 'StreamCam', 'K380', 'C920'],
     },
     variants: ['USB-C', 'HDMI', 'Lightning'],
+    priceRange: { min: 9, max: 299 },
     attributes: [
       {
         key: 'length',
@@ -188,6 +192,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Random House': ['Knopf', 'Doubleday', 'Crown', 'Ballantine', 'Del Rey'],
     },
     variants: ['Hardcover', 'Paperback', 'E-book'],
+    priceRange: { min: 9, max: 99 },
     attributes: [
       {
         key: 'genre',
@@ -229,6 +234,7 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Uniqlo': ['Heattech', 'Aerism', 'Ultra Light Down', 'Kando', 'U'],
     },
     variants: ['Classic', 'Sport', 'Casual'],
+    priceRange: { min: 19, max: 599 },
     attributes: [
       {
         key: 'size',

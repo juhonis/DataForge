@@ -47,6 +47,13 @@ interface StoreState {
   selectAllBrandModels: (brandId: string) => void;
   deselectAllBrandModels: (brandId: string) => void;
 
+  // Price management
+  updateCategoryPriceRange: (categoryId: string, min: number, max: number) => void;
+  updateBrandPriceRange: (brandId: string, min: number, max: number) => void;
+  removeBrandPriceRange: (brandId: string) => void;
+  setModelPrice: (brandId: string, model: string, price: number) => void;
+  removeModelPrice: (brandId: string, model: string) => void;
+
   // Generated products
   products: Product[];
   setProducts: (products: Product[]) => void;
@@ -68,6 +75,7 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
       name,
       models,
       selectedModels: [...models], // All models selected by default
+      modelPrices: {}, // Empty price map initially
     };
   });
 };
@@ -267,6 +275,7 @@ export const useStore = create<StoreState>((set, get) => ({
       name,
       models,
       selectedModels: [...models],
+      modelPrices: {},
     };
     set((state) => ({
       brands: [...state.brands, newBrand],
@@ -377,6 +386,60 @@ export const useStore = create<StoreState>((set, get) => ({
           ? { ...b, selectedModels: [] }
           : b
       ),
+    }));
+  },
+
+  // Price management
+  updateCategoryPriceRange: (categoryId, min, max) => {
+    set((state) => {
+      const updatePriceRange = (c: CategoryTemplate) =>
+        c.id === categoryId
+          ? { ...c, priceRange: { min, max } }
+          : c;
+      return {
+        categories: state.categories.map(updatePriceRange),
+        selectedCategory: updatePriceRange(state.selectedCategory),
+      };
+    });
+  },
+
+  updateBrandPriceRange: (brandId, min, max) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, priceRange: { min, max } }
+          : b
+      ),
+    }));
+  },
+
+  removeBrandPriceRange: (brandId) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, priceRange: undefined }
+          : b
+      ),
+    }));
+  },
+
+  setModelPrice: (brandId, model, price) => {
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === brandId
+          ? { ...b, modelPrices: { ...b.modelPrices, [model]: price } }
+          : b
+      ),
+    }));
+  },
+
+  removeModelPrice: (brandId, model) => {
+    set((state) => ({
+      brands: state.brands.map(b => {
+        if (b.id !== brandId) return b;
+        const { [model]: _, ...remainingPrices } = b.modelPrices;
+        return { ...b, modelPrices: remainingPrices };
+      }),
     }));
   },
 

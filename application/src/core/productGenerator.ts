@@ -53,7 +53,7 @@ const generateProductName = (
   brand: Brand,
   category: CategoryTemplate,
   attributes: Record<string, any>
-): string => {
+): { name: string; model: string } => {
   // Use only selected models for this brand
   const availableModels = brand.selectedModels.length > 0 
     ? brand.selectedModels 
@@ -66,23 +66,38 @@ const generateProductName = (
   // For laptops: Brand + Model + Screen Size
   if (category.id === 'laptops') {
     const screenSize = attributes['screenSize'] || getRandomItem(['13 Inch', '14 Inch', '15 Inch', '16 Inch']);
-    return `${brand.name} ${model} ${screenSize}`;
+    return { name: `${brand.name} ${model} ${screenSize}`, model };
   }
 
   // For audio: Brand + Model + Variant
   if (category.id === 'audio') {
     const variant = category.variants.length > 0 ? getRandomItem(category.variants) : '';
-    return `${brand.name} ${model} ${variant}`.trim();
+    return { name: `${brand.name} ${model} ${variant}`.trim(), model };
   }
 
   // For accessories: Brand + Model + Device Type
   if (category.id === 'accessories') {
     const deviceType = getRandomItem(['Cable', 'Hub', 'Adapter']);
-    return `${brand.name} ${model} ${deviceType}`;
+    return { name: `${brand.name} ${model} ${deviceType}`, model };
   }
 
   // Default naming: Brand + Model
-  return `${brand.name} ${model}`.trim();
+  return { name: `${brand.name} ${model}`.trim(), model };
+};
+
+const generatePrice = (brand: Brand, model: string, category: CategoryTemplate): number => {
+  // Priority 1: Exact model price
+  if (brand.modelPrices && brand.modelPrices[model] !== undefined) {
+    return brand.modelPrices[model];
+  }
+  
+  // Priority 2: Brand-specific price range
+  if (brand.priceRange) {
+    return faker.number.int({ min: brand.priceRange.min, max: brand.priceRange.max });
+  }
+  
+  // Priority 3: Category default price range
+  return faker.number.int({ min: category.priceRange.min, max: category.priceRange.max });
 };
 
 const generateDimensions = (category: CategoryTemplate) => {
@@ -138,15 +153,16 @@ export const generateProduct = (
 ): Product => {
   const id = generateUUID();
   const attributes = generateAttributes(category.attributes);
-  const name = generateProductName(brand, category, attributes);
+  const { name, model } = generateProductName(brand, category, attributes);
   const dimensions = generateDimensions(category);
+  const price = generatePrice(brand, model, category);
 
   return {
     id,
     brand: brand.name,
     name,
     slug: generateSlug(name, id),
-    price: faker.number.int({ min: 10, max: 3000 }),
+    price,
     stock_quantity: faker.number.int({ min: 0, max: 100 }),
     category: category.name,
     sku: generateSKU(category.skuPrefix, id),

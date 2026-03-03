@@ -15,6 +15,11 @@ export interface Product {
   attributes: Record<string, any>;
 }
 
+export interface PriceRange {
+  min: number;
+  max: number;
+}
+
 export interface CategoryTemplate {
   id: string;
   name: string;
@@ -26,6 +31,7 @@ export interface CategoryTemplate {
   brandModels: Record<string, string[]>; // Brand-specific models
   variants: string[];
   attributes: AttributeDefinition[];
+  priceRange: PriceRange; // Global price range for this category
 }
 
 export interface AttributeDefinition {
@@ -40,8 +46,10 @@ export interface AttributeDefinition {
 export interface Brand {
   id: string;
   name: string;
-  models: string[];  // All available models for this brand
-  selectedModels: string[];  // Models currently selected for generation
+  models: string[]; // All available models for this brand
+  selectedModels: string[]; // Models currently selected for generation
+  priceRange?: PriceRange; // Optional per-brand price range (overrides category default)
+  modelPrices: Record<string, number>; // Optional exact prices for specific models
 }
 
 export interface GenerationConfig {
