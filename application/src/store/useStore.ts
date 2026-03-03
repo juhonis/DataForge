@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Blueprint, BlueprintField } from '../core/engine';
-import { CategoryTemplate, Brand, Product } from '../types/product';
+import { CategoryTemplate, Brand, Product, AttributeDefinition } from '../types/product';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
@@ -11,22 +11,34 @@ interface StoreState {
   removeField: (id: string) => void;
   updateField: (id: string, updates: Partial<BlueprintField>) => void;
   updateFieldOption: (fieldId: string, key: string, value: any) => void;
-  
-  // E-commerce specific state
+
+  // Category management
+  categories: CategoryTemplate[];
   selectedCategory: CategoryTemplate;
   setSelectedCategory: (category: CategoryTemplate) => void;
+  addCategory: (category: CategoryTemplate) => void;
+  updateCategory: (id: string, updates: Partial<CategoryTemplate>) => void;
+  removeCategory: (id: string) => void;
   
+  // Attribute management
+  addAttribute: (categoryId: string, attribute: AttributeDefinition) => void;
+  updateAttribute: (categoryId: string, attributeKey: string, updates: Partial<AttributeDefinition>) => void;
+  removeAttribute: (categoryId: string, attributeKey: string) => void;
+  addAttributeOption: (categoryId: string, attributeKey: string, option: string) => void;
+  removeAttributeOption: (categoryId: string, attributeKey: string, option: string) => void;
+
+  // Brands
   brands: Brand[];
   addBrand: (name: string) => void;
   removeBrand: (id: string) => void;
   updateBrand: (id: string, name: string) => void;
   resetBrands: () => void;
-  
+
   selectedBrands: string[];
   toggleBrand: (id: string) => void;
   selectAllBrands: () => void;
   deselectAllBrands: () => void;
-  
+
   // Generated products
   products: Product[];
   setProducts: (products: Product[]) => void;
@@ -86,7 +98,8 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     })),
   
-  // E-commerce state
+  // Category management
+  categories: CATEGORY_TEMPLATES,
   selectedCategory: defaultCategory,
   setSelectedCategory: (category) => {
     const brands = createInitialBrands(category);
@@ -98,6 +111,130 @@ export const useStore = create<StoreState>((set, get) => ({
     });
   },
   
+  addCategory: (category) => {
+    set((state) => ({
+      categories: [...state.categories, category],
+    }));
+  },
+  
+  updateCategory: (id, updates) => {
+    set((state) => {
+      const updatedCategories = state.categories.map(c => 
+        c.id === id ? { ...c, ...updates } : c
+      );
+      const updatedSelected = state.selectedCategory.id === id 
+        ? { ...state.selectedCategory, ...updates }
+        : state.selectedCategory;
+      return {
+        categories: updatedCategories,
+        selectedCategory: updatedSelected,
+      };
+    });
+  },
+  
+  removeCategory: (id) => {
+    set((state) => {
+      const remaining = state.categories.filter(c => c.id !== id);
+      const newSelected = state.selectedCategory.id === id && remaining.length > 0
+        ? remaining[0]
+        : state.selectedCategory;
+      const brands = createInitialBrands(newSelected);
+      return {
+        categories: remaining,
+        selectedCategory: newSelected,
+        brands,
+        selectedBrands: brands.map(b => b.id),
+        products: [],
+      };
+    });
+  },
+  
+  // Attribute management
+  addAttribute: (categoryId, attribute) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => 
+        c.id === categoryId 
+          ? { ...c, attributes: [...c.attributes, attribute] }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+  
+  updateAttribute: (categoryId, attributeKey, updates) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => 
+        c.id === categoryId 
+          ? { 
+              ...c, 
+              attributes: c.attributes.map(a => 
+                a.key === attributeKey ? { ...a, ...updates } : a
+              )
+            }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+  
+  removeAttribute: (categoryId, attributeKey) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => 
+        c.id === categoryId 
+          ? { ...c, attributes: c.attributes.filter(a => a.key !== attributeKey) }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+  
+  addAttributeOption: (categoryId, attributeKey, option) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => 
+        c.id === categoryId 
+          ? { 
+              ...c, 
+              attributes: c.attributes.map(a => 
+                a.key === attributeKey 
+                  ? { ...a, options: [...(a.options || []), option] }
+                  : a
+              )
+            }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+  
+  removeAttributeOption: (categoryId, attributeKey, option) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => 
+        c.id === categoryId 
+          ? { 
+              ...c, 
+              attributes: c.attributes.map(a => 
+                a.key === attributeKey 
+                  ? { ...a, options: (a.options || []).filter(o => o !== option) }
+                  : a
+              )
+            }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+  
+  // Brands
   brands: createInitialBrands(defaultCategory),
   addBrand: (name) => {
     const newBrand: Brand = {
