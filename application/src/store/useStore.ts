@@ -56,12 +56,20 @@ interface StoreState {
 const defaultCategory = getDefaultCategory();
 
 const createInitialBrands = (category: CategoryTemplate): Brand[] => {
-  return category.defaultBrands.map((name) => ({
-    id: crypto.randomUUID(),
-    name,
-    models: [...category.models],
-    selectedModels: [...category.models], // All models selected by default
-  }));
+  return category.defaultBrands.map((name) => {
+    // Use brand-specific models if available, otherwise fall back to generic models
+    const brandSpecificModels = category.brandModels?.[name];
+    const models = brandSpecificModels && brandSpecificModels.length > 0
+      ? brandSpecificModels
+      : [...category.models];
+    
+    return {
+      id: crypto.randomUUID(),
+      name,
+      models,
+      selectedModels: [...models], // All models selected by default
+    };
+  });
 };
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -248,11 +256,17 @@ export const useStore = create<StoreState>((set, get) => ({
   brands: createInitialBrands(defaultCategory),
   addBrand: (name) => {
     const { selectedCategory } = get();
+    // Check if there are brand-specific models for this name
+    const brandSpecificModels = selectedCategory.brandModels?.[name];
+    const models = brandSpecificModels && brandSpecificModels.length > 0
+      ? brandSpecificModels
+      : [...selectedCategory.models];
+    
     const newBrand: Brand = {
       id: crypto.randomUUID(),
       name,
-      models: [...selectedCategory.models],
-      selectedModels: [...selectedCategory.models],
+      models,
+      selectedModels: [...models],
     };
     set((state) => ({
       brands: [...state.brands, newBrand],

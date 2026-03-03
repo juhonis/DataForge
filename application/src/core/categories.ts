@@ -34,7 +34,13 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     skuPrefix: 'PHN',
     unsplashIds: PHONE_IMAGES,
     defaultBrands: ['Apple', 'Samsung', 'Google', 'OnePlus'],
-    models: ['Phone'],
+    models: ['15', 'Pro', 'Ultra', 'Mini', 'Max'],
+    brandModels: {
+      'Apple': ['iPhone 15', 'iPhone 15 Pro', 'iPhone 15 Pro Max', 'iPhone 15 Plus', 'iPhone SE'],
+      'Samsung': ['Galaxy S24', 'Galaxy S24+', 'Galaxy S24 Ultra', 'Galaxy Z Fold', 'Galaxy Z Flip'],
+      'Google': ['Pixel 8', 'Pixel 8 Pro', 'Pixel 8a', 'Pixel Fold', 'Pixel Tablet'],
+      'OnePlus': ['OnePlus 12', 'OnePlus 12R', 'OnePlus Open', 'OnePlus Nord', 'OnePlus 11'],
+    },
     variants: ['Mini', 'Pro', 'Ultra', 'X'],
     attributes: [
       {
@@ -64,7 +70,14 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     skuPrefix: 'LAP',
     unsplashIds: LAPTOP_IMAGES,
     defaultBrands: ['Apple', 'Dell', 'HP', 'Lenovo', 'Asus'],
-    models: [''],
+    models: ['Pro', 'Air', 'Studio', 'Elite', 'Standard'],
+    brandModels: {
+      'Apple': ['MacBook Air', 'MacBook Pro 14', 'MacBook Pro 16', 'Mac Studio', 'Mac mini'],
+      'Dell': ['XPS 13', 'XPS 15', 'Latitude', 'Inspiron', 'Alienware'],
+      'HP': ['Spectre', 'Envy', 'Pavilion', 'EliteBook', 'Omen'],
+      'Lenovo': ['ThinkPad X1', 'ThinkPad T', 'Yoga', 'Legion', 'IdeaPad'],
+      'Asus': ['ZenBook', 'VivoBook', 'ROG', 'TUF', 'ProArt'],
+    },
     variants: ['Pro', 'Noob'],
     attributes: [
       {
@@ -100,7 +113,13 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     skuPrefix: 'AUD',
     unsplashIds: AUDIO_IMAGES,
     defaultBrands: ['Sony', 'Bose', 'JBL', 'Sennheiser'],
-    models: [''],
+    models: ['Over-Ear', 'In-Ear', 'Buds', 'Studio', 'Sport'],
+    brandModels: {
+      'Sony': ['WH-1000XM5', 'WF-1000XM5', 'LinkBuds', 'SRS-XB', 'HT-A'],
+      'Bose': ['QuietComfort Ultra', 'QuietComfort', 'Sport Earbuds', 'SoundLink', 'Smart Speaker'],
+      'JBL': ['Tune', 'Live', 'Quantum', 'Flip', 'Charge'],
+      'Sennheiser': ['Momentum 4', 'Momentum True Wireless', 'HD 660S', 'IE 900', 'Ambeo'],
+    },
     variants: ['Buds', 'Headphones'],
     attributes: [
       {
@@ -129,7 +148,12 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     skuPrefix: 'ACC',
     unsplashIds: CABLE_IMAGES,
     defaultBrands: ['Anker', 'Belkin', 'Logi'],
-    models: [''],
+    models: ['Cable', 'Hub', 'Adapter', 'Charger', 'Dock'],
+    brandModels: {
+      'Anker': ['PowerLine', 'PowerPort', 'PowerExpand', 'PowerCore', 'Soundcore'],
+      'Belkin': ['BoostCharge', 'Connect', 'MagSafe', 'Thunderbolt', 'WeMo'],
+      'Logi': ['MX Keys', 'MX Master', 'StreamCam', 'K380', 'C920'],
+    },
     variants: ['USB-C', 'HDMI', 'Lightning'],
     attributes: [
       {
@@ -156,7 +180,13 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800',
     ],
     defaultBrands: ['Penguin', 'HarperCollins', 'Simon & Schuster', 'Random House'],
-    models: [''],
+    models: ['Hardcover', 'Paperback', 'E-book', 'Audiobook', 'Collector'],
+    brandModels: {
+      'Penguin': ['Classics', 'Modern Classics', 'Random House', 'Viking', 'Penguin Press'],
+      'HarperCollins': ['Harper', 'William Morrow', 'Avon', 'Thomas Nelson', 'Zondervan'],
+      'Simon & Schuster': ['Scribner', 'Atria', 'Gallery', 'Touchstone', 'Free Press'],
+      'Random House': ['Knopf', 'Doubleday', 'Crown', 'Ballantine', 'Del Rey'],
+    },
     variants: ['Hardcover', 'Paperback', 'E-book'],
     attributes: [
       {
@@ -190,7 +220,14 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800',
     ],
     defaultBrands: ['Nike', 'Adidas', 'Zara', 'H&M', 'Uniqlo'],
-    models: ['T-Shirt', 'Jeans', 'Jacket', 'Sneakers'],
+    models: ['T-Shirt', 'Jeans', 'Jacket', 'Sneakers', 'Hoodie'],
+    brandModels: {
+      'Nike': ['Air Force', 'Air Max', 'Dri-FIT', 'Tech Fleece', 'Pro'],
+      'Adidas': ['Ultraboost', 'Stan Smith', 'Originals', 'Terrex', 'Essentials'],
+      'Zara': ['Basic', 'Premium', 'Studio', 'Join Life', 'Origins'],
+      'H&M': ['Conscious', 'Trend', 'Divided', 'Kids', 'Premium'],
+      'Uniqlo': ['Heattech', 'Aerism', 'Ultra Light Down', 'Kando', 'U'],
+    },
     variants: ['Classic', 'Sport', 'Casual'],
     attributes: [
       {

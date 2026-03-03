@@ -22,7 +22,8 @@ export interface CategoryTemplate {
   skuPrefix: string;
   unsplashIds: string[];
   defaultBrands: string[];
-  models: string[];
+  models: string[]; // Generic fallback models
+  brandModels: Record<string, string[]>; // Brand-specific models
   variants: string[];
   attributes: AttributeDefinition[];
 }
