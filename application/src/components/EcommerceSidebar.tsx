@@ -50,6 +50,7 @@ export const EcommerceSidebar: React.FC = () => {
     updateCategory,
     addAttribute,
     updateAttribute,
+    renameAttributeKey,
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
@@ -77,6 +78,7 @@ const [editModelName, setEditModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
+  const [editAttrKey, setEditAttrKey] = useState('');
   const [editAttrType, setEditAttrType] = useState<AttributeDefinition['type']>('select');
   const [editAttrMin, setEditAttrMin] = useState<number>(0);
   const [editAttrMax, setEditAttrMax] = useState<number>(100);
@@ -235,6 +237,7 @@ const [editModelName, setEditModelName] = useState('');
 
   const startEditingAttr = (attr: AttributeDefinition) => {
     setEditingAttr(attr.key);
+    setEditAttrKey(attr.key);
     setEditAttrType(attr.type);
     setEditAttrMin(attr.min || 0);
     setEditAttrMax(attr.max || 100);
@@ -252,12 +255,20 @@ const [editModelName, setEditModelName] = useState('');
       }
 
       updateAttribute(selectedCategory.id, editingAttr, updates);
+      
+      // Handle key rename if changed
+      if (editAttrKey.trim() && editAttrKey !== editingAttr) {
+        renameAttributeKey(selectedCategory.id, editingAttr, editAttrKey.trim().toLowerCase().replace(/\s+/g, '_'));
+      }
+      
       setEditingAttr(null);
+      setEditAttrKey('');
     }
   };
 
   const cancelAttrEdit = () => {
     setEditingAttr(null);
+    setEditAttrKey('');
     setNewOption('');
   };
 
@@ -1040,9 +1051,21 @@ const [editModelName, setEditModelName] = useState('');
                   <div className="space-y-3">
                     {/* Edit Attribute Form */}
                     <div>
-                          <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                            Type
-                          </label>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                        Key
+                      </label>
+                      <input
+                        type="text"
+                        value={editAttrKey}
+                        onChange={(e) => setEditAttrKey(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                        Type
+                      </label>
                           <div className="grid grid-cols-2 gap-2">
                             {ATTRIBUTE_TYPES.map((type) => (
                               <button

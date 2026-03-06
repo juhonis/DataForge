@@ -23,6 +23,7 @@ interface StoreState {
   // Attribute management
   addAttribute: (categoryId: string, attribute: AttributeDefinition) => void;
   updateAttribute: (categoryId: string, attributeKey: string, updates: Partial<AttributeDefinition>) => void;
+  renameAttributeKey: (categoryId: string, oldKey: string, newKey: string) => void;
   removeAttribute: (categoryId: string, attributeKey: string) => void;
   addAttributeOption: (categoryId: string, attributeKey: string, option: string) => void;
   removeAttributeOption: (categoryId: string, attributeKey: string, option: string) => void;
@@ -183,31 +184,31 @@ export const useStore = create<StoreState>((set, get) => ({
           ? { ...c, attributes: [...c.attributes, attribute] }
           : c;
       return {
-        categories: state.categories.map(updateCategoryAttrs),
-        selectedCategory: updateCategoryAttrs(state.selectedCategory),
-      };
+      categories: state.categories.map(updateCategoryAttrs),
+      selectedCategory: updateCategoryAttrs(state.selectedCategory),
     });
-  },
-  
-  updateAttribute: (categoryId, attributeKey, updates) => {
-    set((state) => {
-      const updateCategoryAttrs = (c: CategoryTemplate) => 
-        c.id === categoryId 
-          ? { 
-              ...c, 
-              attributes: c.attributes.map(a => 
-                a.key === attributeKey ? { ...a, ...updates } : a
-              )
-            }
-          : c;
-      return {
-        categories: state.categories.map(updateCategoryAttrs),
-        selectedCategory: updateCategoryAttrs(state.selectedCategory),
-      };
-    });
-  },
-  
-  removeAttribute: (categoryId, attributeKey) => {
+  });
+},
+
+renameAttributeKey: (categoryId, oldKey, newKey) => {
+  set((state) => {
+    const updateCategoryAttrs = (c: CategoryTemplate) =>
+      c.id === categoryId
+        ? {
+            ...c,
+            attributes: c.attributes.map(a =>
+              a.key === oldKey ? { ...a, key: newKey } : a
+            )
+          }
+        : c;
+    return {
+      categories: state.categories.map(updateCategoryAttrs),
+      selectedCategory: updateCategoryAttrs(state.selectedCategory),
+    };
+  });
+},
+
+removeAttribute: (categoryId, attributeKey) => {
     set((state) => {
       const updateCategoryAttrs = (c: CategoryTemplate) => 
         c.id === categoryId 
