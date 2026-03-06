@@ -179,18 +179,36 @@ export const useStore = create<StoreState>((set, get) => ({
   // Attribute management
   addAttribute: (categoryId, attribute) => {
     set((state) => {
-      const updateCategoryAttrs = (c: CategoryTemplate) => 
-        c.id === categoryId 
+      const updateCategoryAttrs = (c: CategoryTemplate) =>
+        c.id === categoryId
           ? { ...c, attributes: [...c.attributes, attribute] }
           : c;
       return {
-      categories: state.categories.map(updateCategoryAttrs),
-      selectedCategory: updateCategoryAttrs(state.selectedCategory),
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
     });
-  });
-},
+  },
 
-renameAttributeKey: (categoryId, oldKey, newKey) => {
+  updateAttribute: (categoryId, attributeKey, updates) => {
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) =>
+        c.id === categoryId
+          ? {
+              ...c,
+              attributes: c.attributes.map(a =>
+                a.key === attributeKey ? { ...a, ...updates } : a
+              )
+            }
+          : c;
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
+
+  renameAttributeKey: (categoryId, oldKey, newKey) => {
   set((state) => {
     const updateCategoryAttrs = (c: CategoryTemplate) =>
       c.id === categoryId
