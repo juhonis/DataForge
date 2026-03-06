@@ -1,8 +1,22 @@
 import { faker } from '@faker-js/faker';
 import { Product, CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
 
-export const generateUUID = (): string => {
-  return crypto.randomUUID();
+let sequentialCounter = 0;
+
+export const generateId = (format: 'uuid' | 'sequential' | 'custom', prefix?: string, index?: number): string => {
+  switch (format) {
+    case 'sequential':
+      return String(index ?? ++sequentialCounter);
+    case 'custom':
+      return `${prefix ?? ''}${index ?? ++sequentialCounter}`;
+    case 'uuid':
+    default:
+      return crypto.randomUUID();
+  }
+};
+
+export const resetSequentialCounter = (): void => {
+  sequentialCounter = 0;
 };
 
 export const generateSKU = (prefix: string, id: string): string => {
@@ -149,9 +163,10 @@ const generateDimensions = (category: CategoryTemplate) => {
 export const generateProduct = (
   category: CategoryTemplate,
   brand: Brand,
-  existingProducts: Product[] = []
+  existingProducts: Product[] = [],
+  index?: number
 ): Product => {
-  const id = generateUUID();
+  const id = generateId(category.idFormat, category.idPrefix, index);
   const attributes = generateAttributes(category.attributes);
   const { name, model } = generateProductName(brand, category, attributes);
   const dimensions = generateDimensions(category);
@@ -176,21 +191,27 @@ export const generateProducts = (
   category: CategoryTemplate,
   brands: Brand[],
   selectedBrandIds: string[],
-  count: number
+  count: number,
+  resetCounter: boolean = true
 ): Product[] => {
   const products: Product[] = [];
   const selectedBrands = brands.filter((b) => selectedBrandIds.includes(b.id));
-  
+
   if (selectedBrands.length === 0) {
     return products;
   }
-  
+
+  // Reset sequential counter if requested
+  if (resetCounter) {
+    resetSequentialCounter();
+  }
+
   for (let i = 0; i < count; i++) {
     const brand = selectedBrands[i % selectedBrands.length];
-    const product = generateProduct(category, brand, products);
+    const product = generateProduct(category, brand, products, i + 1);
     products.push(product);
   }
-  
+
   return products;
 };
 

@@ -28,6 +28,8 @@ function App() {
     const configSignature = JSON.stringify({
       category: selectedCategory.id,
       skuPrefix: selectedCategory.skuPrefix,
+      idFormat: selectedCategory.idFormat,
+      idPrefix: selectedCategory.idPrefix,
       brands: brands.map(b => ({
         id: b.id,
         name: b.name,
@@ -39,7 +41,6 @@ function App() {
       priceRange: selectedCategory.priceRange,
       attributes: selectedCategory.attributes.map(a => ({
         key: a.key,
-        label: a.label,
         type: a.type,
         options: a.options,
         min: a.min,
@@ -72,7 +73,7 @@ function App() {
         clearProducts();
       }
     }
-  }, [selectedCategory, brands, selectedBrands]);
+  }, [selectedCategory, brands, selectedBrands, selectedCategory.idFormat, selectedCategory.idPrefix]);
 
   const handleGenerate = () => {
     if (selectedBrands.length === 0) return;

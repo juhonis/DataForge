@@ -43,22 +43,20 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['Mini', 'Pro', 'Ultra', 'X'],
     priceRange: { min: 299, max: 1599 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'os',
-        label: 'Operating System',
         type: 'select',
         options: ['iOS 17', 'Android 14'],
       },
       {
         key: 'storage',
-        label: 'Storage',
         type: 'select',
         options: ['128GB', '256GB', '512GB'],
       },
       {
         key: 'color',
-        label: 'Color',
         type: 'select',
         options: ['Purple', 'Titanium', 'Midnight', 'Silver'],
       },
@@ -81,28 +79,25 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['Pro', 'Noob'],
     priceRange: { min: 599, max: 3999 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'cpu',
-        label: 'Processor',
         type: 'select',
         options: ['Intel i7', 'AMD Ryzen 7', 'M3'],
       },
       {
         key: 'ram',
-        label: 'RAM',
         type: 'select',
         options: ['16GB', '32GB'],
       },
       {
         key: 'storage',
-        label: 'Storage',
         type: 'select',
         options: ['512GB', '1TB'],
       },
       {
         key: 'screenSize',
-        label: 'Screen Size',
         type: 'select',
         options: ['13 Inch', '14 Inch', '15 Inch', '16 Inch'],
       },
@@ -124,21 +119,19 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['Buds', 'Headphones'],
     priceRange: { min: 49, max: 499 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'type',
-        label: 'Type',
         type: 'select',
         options: ['True Wireless', 'Over-ear', 'In-ear'],
       },
       {
         key: 'wireless',
-        label: 'Wireless',
         type: 'boolean',
       },
       {
         key: 'battery_life',
-        label: 'Battery Life',
         type: 'select',
         options: ['20h', '30h', '40h'],
       },
@@ -159,16 +152,15 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['USB-C', 'HDMI', 'Lightning'],
     priceRange: { min: 9, max: 299 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'length',
-        label: 'Length',
         type: 'select',
         options: ['1m', '2m', '3m'],
       },
       {
         key: 'compatibility',
-        label: 'Compatibility',
         type: 'select',
         options: ['Universal', 'Windows', 'Mac'],
       },
@@ -193,23 +185,21 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['Hardcover', 'Paperback', 'E-book'],
     priceRange: { min: 9, max: 99 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'genre',
-        label: 'Genre',
         type: 'select',
         options: ['Fiction', 'Non-Fiction', 'Sci-Fi', 'Mystery', 'Biography'],
       },
       {
         key: 'pages',
-        label: 'Pages',
         type: 'number',
         min: 100,
         max: 1000,
       },
       {
         key: 'language',
-        label: 'Language',
         type: 'select',
         options: ['English', 'Spanish', 'French', 'German'],
       },
@@ -235,22 +225,20 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
     },
     variants: ['Classic', 'Sport', 'Casual'],
     priceRange: { min: 19, max: 599 },
+    idFormat: 'uuid',
     attributes: [
       {
         key: 'size',
-        label: 'Size',
         type: 'select',
         options: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
       },
       {
         key: 'color',
-        label: 'Color',
         type: 'select',
         options: ['Black', 'White', 'Blue', 'Red', 'Green'],
       },
       {
         key: 'material',
-        label: 'Material',
         type: 'select',
         options: ['Cotton', 'Polyester', 'Wool', 'Leather'],
       },

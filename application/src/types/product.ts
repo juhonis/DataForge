@@ -20,6 +20,8 @@ export interface PriceRange {
   max: number;
 }
 
+export type IdFormat = 'uuid' | 'sequential' | 'custom';
+
 export interface CategoryTemplate {
   id: string;
   name: string;
@@ -32,11 +34,12 @@ export interface CategoryTemplate {
   variants: string[];
   attributes: AttributeDefinition[];
   priceRange: PriceRange; // Global price range for this category
+  idFormat: IdFormat; // Format for generating product IDs
+  idPrefix?: string; // Optional prefix for custom ID format
 }
 
 export interface AttributeDefinition {
   key: string;
-  label: string;
   type: 'select' | 'number' | 'boolean' | 'text';
   options?: string[] | number[];
   min?: number;

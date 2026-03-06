@@ -77,19 +77,19 @@ const [editModelName, setEditModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
-  const [editAttrLabel, setEditAttrLabel] = useState('');
   const [editAttrType, setEditAttrType] = useState<AttributeDefinition['type']>('select');
   const [editAttrMin, setEditAttrMin] = useState<number>(0);
   const [editAttrMax, setEditAttrMax] = useState<number>(100);
   const [newOption, setNewOption] = useState('');
   const [addingAttr, setAddingAttr] = useState(false);
   const [newAttrKey, setNewAttrKey] = useState('');
-  const [newAttrLabel, setNewAttrLabel] = useState('');
   
   // Category edit state
   const [editingCategory, setEditingCategory] = useState(false);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editSkuPrefix, setEditSkuPrefix] = useState('');
+  const [editIdFormat, setEditIdFormat] = useState<'uuid' | 'sequential' | 'custom'>('uuid');
+  const [editIdPrefix, setEditIdPrefix] = useState('');
   
   // Expand/collapse sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -146,15 +146,22 @@ const [editModelName, setEditModelName] = useState('');
     setEditingCategory(true);
     setEditCategoryName(selectedCategory.name);
     setEditSkuPrefix(selectedCategory.skuPrefix);
+    setEditIdFormat(selectedCategory.idFormat || 'uuid');
+    setEditIdPrefix(selectedCategory.idPrefix || '');
   };
 
   const saveCategoryEdit = () => {
     if (editCategoryName.trim() && editSkuPrefix.trim()) {
-      updateCategory(selectedCategory.id, {
+      const updates: Partial<CategoryTemplate> = {
         name: editCategoryName.trim(),
         skuPrefix: editSkuPrefix.trim().toUpperCase(),
         slug: editCategoryName.trim().toLowerCase().replace(/\s+/g, '-'),
-      });
+        idFormat: editIdFormat,
+      };
+      if (editIdFormat === 'custom') {
+        updates.idPrefix = editIdPrefix;
+      }
+      updateCategory(selectedCategory.id, updates);
       setEditingCategory(false);
     }
   };
@@ -163,6 +170,8 @@ const [editModelName, setEditModelName] = useState('');
     setEditingCategory(false);
     setEditCategoryName('');
     setEditSkuPrefix('');
+    setEditIdFormat('uuid');
+    setEditIdPrefix('');
   };
 
   // Price editing handlers
@@ -226,24 +235,22 @@ const [editModelName, setEditModelName] = useState('');
 
   const startEditingAttr = (attr: AttributeDefinition) => {
     setEditingAttr(attr.key);
-    setEditAttrLabel(attr.label);
     setEditAttrType(attr.type);
     setEditAttrMin(attr.min || 0);
     setEditAttrMax(attr.max || 100);
   };
 
   const saveAttrEdit = () => {
-    if (editingAttr && editAttrLabel.trim()) {
+    if (editingAttr) {
       const updates: Partial<AttributeDefinition> = {
-        label: editAttrLabel.trim(),
         type: editAttrType,
       };
-      
+
       if (editAttrType === 'number') {
         updates.min = editAttrMin;
         updates.max = editAttrMax;
       }
-      
+
       updateAttribute(selectedCategory.id, editingAttr, updates);
       setEditingAttr(null);
     }
@@ -251,22 +258,19 @@ const [editModelName, setEditModelName] = useState('');
 
   const cancelAttrEdit = () => {
     setEditingAttr(null);
-    setEditAttrLabel('');
     setNewOption('');
   };
 
   const handleAddAttribute = () => {
-    if (newAttrKey.trim() && newAttrLabel.trim()) {
+    if (newAttrKey.trim()) {
       const newAttr: AttributeDefinition = {
         key: newAttrKey.trim().toLowerCase().replace(/\s+/g, '_'),
-        label: newAttrLabel.trim(),
         type: 'select',
         options: [],
       };
       addAttribute(selectedCategory.id, newAttr);
       setAddingAttr(false);
       setNewAttrKey('');
-      setNewAttrLabel('');
     }
   };
 
@@ -370,18 +374,46 @@ const [editModelName, setEditModelName] = useState('');
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
                     />
                   </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                    SKU Prefix
+                  </label>
+                  <input
+                    type="text"
+                    value={editSkuPrefix}
+                    onChange={(e) => setEditSkuPrefix(e.target.value.toUpperCase())}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                    ID Format
+                  </label>
+                  <select
+                    value={editIdFormat}
+                    onChange={(e) => setEditIdFormat(e.target.value as 'uuid' | 'sequential' | 'custom')}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                  >
+                    <option value="uuid">UUID</option>
+                    <option value="sequential">Sequential</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                {editIdFormat === 'custom' && (
                   <div>
                     <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                      SKU Prefix
+                      ID Prefix
                     </label>
                     <input
                       type="text"
-                      value={editSkuPrefix}
-                      onChange={(e) => setEditSkuPrefix(e.target.value.toUpperCase())}
+                      value={editIdPrefix}
+                      onChange={(e) => setEditIdPrefix(e.target.value)}
+                      placeholder="e.g., PROD-"
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
                     />
                   </div>
-                  <div className="flex gap-2">
+                )}
+                <div className="flex gap-2">
                     <button
                       onClick={saveCategoryEdit}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition-all"
@@ -974,17 +1006,10 @@ const [editModelName, setEditModelName] = useState('');
                     onChange={(e) => setNewAttrKey(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 placeholder:text-slate-600"
                   />
-                  <input
-                    type="text"
-                    placeholder="Attribute label (e.g., Color)"
-                    value={newAttrLabel}
-                    onChange={(e) => setNewAttrLabel(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 placeholder:text-slate-600"
-                  />
                   <div className="flex gap-2">
                     <button
                       onClick={handleAddAttribute}
-                      disabled={!newAttrKey.trim() || !newAttrLabel.trim()}
+                      disabled={!newAttrKey.trim()}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 rounded-lg text-sm font-bold transition-all"
                     >
                       <Save className="w-4 h-4" />
@@ -994,7 +1019,6 @@ const [editModelName, setEditModelName] = useState('');
                       onClick={() => {
                         setAddingAttr(false);
                         setNewAttrKey('');
-                        setNewAttrLabel('');
                       }}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-bold transition-all"
                     >
@@ -1012,22 +1036,10 @@ const [editModelName, setEditModelName] = useState('');
                     key={attr.key}
                     className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-colors"
                   >
-                    {editingAttr === attr.key ? (
-                      <div className="space-y-3">
-                        {/* Edit Attribute Form */}
-                        <div>
-                          <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                            Label
-                          </label>
-                          <input
-                            type="text"
-                            value={editAttrLabel}
-                            onChange={(e) => setEditAttrLabel(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
-                          />
-                        </div>
-
-                        <div>
+                {editingAttr === attr.key ? (
+                  <div className="space-y-3">
+                    {/* Edit Attribute Form */}
+                    <div>
                           <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                             Type
                           </label>
@@ -1135,19 +1147,19 @@ const [editModelName, setEditModelName] = useState('');
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      /* View Mode */
+                ) : (
+                  /* View Mode */
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <div className="text-sm font-bold text-slate-300">
-                              {attr.label}
-                            </div>
-                            <div className="text-[10px] text-slate-500">
-                              {attr.key} • {attr.type}
-                            </div>
-                          </div>
-                          <div className="flex gap-1">
+                        <div className="text-sm font-bold text-slate-300 capitalize">
+                          {attr.key}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {attr.type}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
                             <button
                               onClick={() => startEditingAttr(attr)}
                               className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded transition-all"
