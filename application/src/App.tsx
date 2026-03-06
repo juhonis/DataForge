@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
 import { useStore } from './store/useStore';
 import { generateProducts, downloadJSON } from './core/productGenerator';
-import { Play, Download, Copy, Database, Trash2, Package } from 'lucide-react';
+import { Play, Download, Copy, Database, Trash2, Package, Sparkles } from 'lucide-react';
 
 function App() {
   const {
@@ -16,11 +16,69 @@ function App() {
 
   const [count, setCount] = useState(20);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(true);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  
+  // Refs to track previous config for comparison
+  const prevConfigRef = useRef('');
+
+  // Real-time preview generation
+  useEffect(() => {
+    // Create a config signature from current state
+    const configSignature = JSON.stringify({
+      category: selectedCategory.id,
+      skuPrefix: selectedCategory.skuPrefix,
+      brands: brands.map(b => ({
+        id: b.id,
+        name: b.name,
+        selected: selectedBrands.includes(b.id),
+        selectedModels: b.selectedModels,
+        priceRange: b.priceRange,
+        modelPrices: b.modelPrices,
+      })),
+      priceRange: selectedCategory.priceRange,
+      attributes: selectedCategory.attributes.map(a => ({
+        key: a.key,
+        label: a.label,
+        type: a.type,
+        options: a.options,
+        min: a.min,
+        max: a.max,
+      })),
+    });
+
+    // Only regenerate if config actually changed
+    if (configSignature !== prevConfigRef.current) {
+      prevConfigRef.current = configSignature;
+      
+      // Clear any existing generated products when config changes
+      if (!isPreviewMode && products.length > 0) {
+        clearProducts();
+        setIsPreviewMode(true);
+      }
+      
+      // Generate preview if we have selected brands
+      if (selectedBrands.length > 0) {
+        setIsLoadingPreview(true);
+        // Small delay to prevent excessive re-renders
+        const timeoutId = setTimeout(() => {
+          const data = generateProducts(selectedCategory, brands, selectedBrands, 1);
+          setProducts(data);
+          setIsLoadingPreview(false);
+        }, 150);
+        
+        return () => clearTimeout(timeoutId);
+      } else if (products.length > 0) {
+        clearProducts();
+      }
+    }
+  }, [selectedCategory, brands, selectedBrands]);
 
   const handleGenerate = () => {
     if (selectedBrands.length === 0) return;
 
     setIsGenerating(true);
+    setIsPreviewMode(false);
     // Small delay to show loading state
     setTimeout(() => {
       const data = generateProducts(selectedCategory, brands, selectedBrands, count);
@@ -113,9 +171,12 @@ function App() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {products.length > 0 && (
+            {!isPreviewMode && products.length > 0 && (
               <button
-                onClick={clearProducts}
+                onClick={() => {
+                  clearProducts();
+                  setIsPreviewMode(true);
+                }}
                 className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold text-sm text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
               >
                 <Trash2 className="w-3.5 lg:w-4 h-3.5 lg:h-4" />
@@ -151,9 +212,15 @@ function App() {
               <div className="px-6 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-800/30">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${products.length > 0 ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${
+                      isLoadingPreview ? 'bg-amber-400' : 
+                      products.length > 0 ? (isPreviewMode ? 'bg-amber-500' : 'bg-emerald-500') : 
+                      'bg-slate-600'
+                    }`} />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                      {products.length > 0 ? `${products.length} Products Generated` : 'Ready to Generate'}
+                      {isLoadingPreview ? 'Updating Preview...' :
+                       products.length > 0 ? (isPreviewMode ? 'Live Preview (1 Sample)' : `${products.length} Products Generated`) : 
+                       'Ready to Generate'}
                     </span>
                   </div>
                 </div>
@@ -175,8 +242,8 @@ function App() {
                 </div>
               </div>
 
-              {/* Stats Bar */}
-              {stats && (
+              {/* Stats Bar - Only show for generated products (not preview) */}
+              {stats && !isPreviewMode && (
                 <div className="px-6 py-3 border-b border-slate-800 bg-slate-800/20">
                   <div className="flex items-center gap-6 text-xs">
                     <div className="flex items-center gap-2">
@@ -204,14 +271,24 @@ function App() {
               {/* JSON Content */}
               <div className="flex-1 overflow-auto p-8 font-mono text-sm leading-relaxed custom-scrollbar">
                 {products.length > 0 ? (
-                  <pre className="text-emerald-400/90 whitespace-pre-wrap">{JSON.stringify(products, null, 2)}</pre>
+                  <div className="relative">
+                    {isPreviewMode && (
+                      <div className="absolute -top-2 -left-2 px-3 py-1 bg-amber-500/20 border border-amber-500/50 rounded-full text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3" />
+                        Live Preview
+                      </div>
+                    )}
+                    <pre className={`whitespace-pre-wrap ${isPreviewMode ? 'text-amber-400/90' : 'text-emerald-400/90'}`}>
+                      {JSON.stringify(products, null, 2)}
+                    </pre>
+                  </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-slate-700 space-y-4">
                     <Database className="w-12 h-12 opacity-10" />
                     <div className="text-center">
-                      <p className="text-sm font-medium opacity-40 uppercase tracking-widest mb-2">No Products Yet</p>
+                      <p className="text-sm font-medium opacity-40 uppercase tracking-widest mb-2">Select Brands to Preview</p>
                       <p className="text-xs text-slate-600 max-w-xs">
-                        Select brands and click "Generate" to create mock products for {selectedCategory.name}
+                        Select brands in the sidebar to see a live preview of your product configuration
                       </p>
                     </div>
                   </div>
