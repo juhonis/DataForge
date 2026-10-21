@@ -20,6 +20,12 @@ import {
   Car,
   Layers,
 } from 'lucide-react';
+import {
+  isValidPriceRange,
+  normalizeAttributeKey,
+  normalizeSkuPrefix,
+  slugify,
+} from '../core/normalize';
 
 // Attribute type options
 const ATTRIBUTE_TYPES = [
@@ -50,27 +56,27 @@ export const EcommerceSidebar: React.FC = () => {
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
-  addBrandModel,
-  removeBrandModel,
-  updateBrandModel,
-  toggleBrandModel,
-  selectAllBrandModels,
-  deselectAllBrandModels,
-  updateCategoryPriceRange,
-  updateBrandPriceRange,
-  removeBrandPriceRange,
-  setModelPrice,
-  removeModelPrice,
+    addBrandModel,
+    removeBrandModel,
+    updateBrandModel,
+    toggleBrandModel,
+    selectAllBrandModels,
+    deselectAllBrandModels,
+    updateCategoryPriceRange,
+    updateBrandPriceRange,
+    removeBrandPriceRange,
+    setModelPrice,
+    removeModelPrice,
 } = useStore();
 
   // Brand state
   const [newBrandName, setNewBrandName] = useState('');
   const [editingBrand, setEditingBrand] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
-const [newModelName, setNewModelName] = useState('');
-const [editingModel, setEditingModel] = useState<{ brandId: string; model: string } | null>(null);
-const [editModelName, setEditModelName] = useState('');
+  const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
+  const [newModelName, setNewModelName] = useState('');
+  const [editingModel, setEditingModel] = useState<{ brandId: string; model: string } | null>(null);
+  const [editModelName, setEditModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
@@ -152,8 +158,8 @@ const [editModelName, setEditModelName] = useState('');
     if (editCategoryName.trim() && editSkuPrefix.trim()) {
       const updates: Partial<CategoryTemplate> = {
         name: editCategoryName.trim(),
-        skuPrefix: editSkuPrefix.trim().toUpperCase(),
-        slug: editCategoryName.trim().toLowerCase().replace(/\s+/g, '-'),
+        skuPrefix: editSkuPrefix,
+        slug: slugify(editCategoryName),
         idFormat: editIdFormat,
       };
       if (editIdFormat === 'custom') {
@@ -180,7 +186,7 @@ const [editModelName, setEditModelName] = useState('');
   };
 
   const saveCategoryPriceEdit = () => {
-    if (editCatPriceMin >= 0 && editCatPriceMax > editCatPriceMin) {
+    if (isValidPriceRange(editCatPriceMin, editCatPriceMax)) {
       updateCategoryPriceRange(selectedCategory.id, editCatPriceMin, editCatPriceMax);
       setEditingCategoryPrice(false);
     }
@@ -197,7 +203,7 @@ const [editModelName, setEditModelName] = useState('');
   };
 
   const saveBrandPriceEdit = (brandId: string) => {
-    if (editBrandPriceMin >= 0 && editBrandPriceMax > editBrandPriceMin) {
+    if (isValidPriceRange(editBrandPriceMin, editBrandPriceMax)) {
       updateBrandPriceRange(brandId, editBrandPriceMin, editBrandPriceMax);
       setEditingBrandPrice(null);
     }
@@ -254,7 +260,7 @@ const [editModelName, setEditModelName] = useState('');
       
       // Handle key rename if changed
       if (editAttrKey.trim() && editAttrKey !== editingAttr) {
-        renameAttributeKey(selectedCategory.id, editingAttr, editAttrKey.trim().toLowerCase().replace(/\s+/g, '_'));
+        renameAttributeKey(selectedCategory.id, editingAttr, normalizeAttributeKey(editAttrKey));
       }
       
       setEditingAttr(null);
@@ -271,7 +277,7 @@ const [editModelName, setEditModelName] = useState('');
   const handleAddAttribute = () => {
     if (newAttrKey.trim()) {
       const newAttr: AttributeDefinition = {
-        key: newAttrKey.trim().toLowerCase().replace(/\s+/g, '_'),
+        key: normalizeAttributeKey(newAttrKey),
         type: 'select',
         options: [],
       };
@@ -390,7 +396,7 @@ const [editModelName, setEditModelName] = useState('');
                     id="edit-sku-prefix"
                     type="text"
                     value={editSkuPrefix}
-                    onChange={(e) => setEditSkuPrefix(e.target.value.toUpperCase())}
+                    onChange={(e) => setEditSkuPrefix(normalizeSkuPrefix(e.target.value))}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
                   />
                 </div>

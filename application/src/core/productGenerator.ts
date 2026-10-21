@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Product, CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
+import { slugify } from './normalize';
 
 let sequentialCounter = 0;
 
@@ -26,7 +27,7 @@ export const generateSKU = (prefix: string, id: string): string => {
 
 export const generateSlug = (name: string, id: string): string => {
   const shortId = id.split('-')[0].toLowerCase();
-  return `${name.toLowerCase().replace(/\s+/g, '-')}-${shortId}`;
+  return [slugify(name), shortId].filter(Boolean).join('-');
 };
 
 const getRandomItem = <T>(arr: T[]): T => {
