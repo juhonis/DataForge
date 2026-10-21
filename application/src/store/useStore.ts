@@ -1,17 +1,11 @@
 import { create } from 'zustand';
-import { Blueprint, BlueprintField } from '../core/engine';
-import { CategoryTemplate, Brand, Product, AttributeDefinition } from '../types/product';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
+import type { Dataset, GenerationSettings } from '../types/dataset';
+import type { PresetConfig } from '../core/presets';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
-  // Legacy blueprint support
-  blueprint: Blueprint;
-  updateBlueprintName: (name: string) => void;
-  addField: (field: BlueprintField) => void;
-  removeField: (id: string) => void;
-  updateField: (id: string, updates: Partial<BlueprintField>) => void;
-  updateFieldOption: (fieldId: string, key: string, value: any) => void;
-
   // Category management
   categories: CategoryTemplate[];
   selectedCategory: CategoryTemplate;
@@ -55,11 +49,26 @@ interface StoreState {
   setModelPrice: (brandId: string, model: string, price: number) => void;
   removeModelPrice: (brandId: string, model: string) => void;
 
-  // Generated products
-  products: Product[];
-  setProducts: (products: Product[]) => void;
-  clearProducts: () => void;
+  // Generated dataset
+  dataset: Dataset | null;
+  setDataset: (dataset: Dataset) => void;
+  clearDataset: () => void;
+
+  // Generation settings
+  settings: GenerationSettings;
+  updateSettings: (updates: Partial<GenerationSettings>) => void;
+
+  // Presets
+  applyPreset: (preset: PresetConfig) => void;
 }
+
+export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
+  seed: 42,
+  productCount: 20,
+  customerCount: 50,
+  ordersPerCustomer: { min: 1, max: 3 },
+  reviewCount: 50,
+};
 
 const defaultCategory = getDefaultCategory();
 
@@ -81,50 +90,9 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
   });
 };
 
-export const useStore = create<StoreState>((set, get) => ({
-  // Legacy blueprint
-  blueprint: {
-    name: 'New E-shop Category',
-    fields: [
-      { id: '1', key: 'id', provider: 'string.uuid' },
-      { id: '2', key: 'name', provider: 'commerce.productName' },
-      { id: '3', key: 'price', provider: 'commerce.price', options: { min: 100, max: 1000 } },
-    ]
-  },
-
-  updateBlueprintName: (name) =>
-    set((state) => ({ blueprint: { ...state.blueprint, name } })),
-
-  addField: (field) =>
-    set((state) => ({
-      blueprint: { ...state.blueprint, fields: [...state.blueprint.fields, field] }
-    })),
-
-  removeField: (id) =>
-    set((state) => ({
-      blueprint: { ...state.blueprint, fields: state.blueprint.fields.filter(f => f.id !== id) }
-    })),
-
-  updateField: (id, updates) =>
-    set((state) => ({
-      blueprint: {
-        ...state.blueprint,
-        fields: state.blueprint.fields.map(f => f.id === id ? { ...f, ...updates } : f)
-      }
-    })),
-
-  updateFieldOption: (fieldId, key, value) =>
-    set((state) => ({
-      blueprint: {
-        ...state.blueprint,
-        fields: state.blueprint.fields.map(f =>
-          f.id === fieldId
-          ? { ...f, options: { ...f.options, [key]: value } }
-          : f
-        )
-      }
-    })),
-  
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
   // Category management
   categories: CATEGORY_TEMPLATES,
   selectedCategory: defaultCategory,
@@ -134,7 +102,7 @@ export const useStore = create<StoreState>((set, get) => ({
       selectedCategory: category,
       brands,
       selectedBrands: brands.map(b => b.id),
-      products: [],
+      dataset: null,
     });
   },
   
@@ -171,7 +139,7 @@ export const useStore = create<StoreState>((set, get) => ({
         selectedCategory: newSelected,
         brands,
         selectedBrands: brands.map(b => b.id),
-        products: [],
+        dataset: null,
       };
     });
   },
@@ -462,8 +430,60 @@ removeAttribute: (categoryId, attributeKey) => {
     }));
   },
 
-  // Products
-  products: [],
-  setProducts: (products) => set({ products }),
-  clearProducts: () => set({ products: [] }),
-}));
+  // Dataset
+  dataset: null,
+  setDataset: (dataset) => set({ dataset }),
+  clearDataset: () => set({ dataset: null }),
+
+  // Generation settings
+  settings: DEFAULT_GENERATION_SETTINGS,
+  updateSettings: (updates) =>
+    set((state) => ({
+      settings: { ...state.settings, ...updates },
+    })),
+
+  // Presets
+  applyPreset: (preset) =>
+    set((state) => ({
+      categories: state.categories.some((category) => category.id === preset.category.id)
+        ? state.categories.map((category) =>
+            category.id === preset.category.id ? preset.category : category,
+          )
+        : [...state.categories, preset.category],
+      selectedCategory: preset.category,
+      brands: preset.brands,
+      selectedBrands: preset.selectedBrands,
+      settings: preset.settings,
+      dataset: null,
+    })),
+    }),
+    {
+      name: 'dataforge-config',
+      version: 1,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        categories: state.categories,
+        selectedCategory: state.selectedCategory,
+        brands: state.brands,
+        selectedBrands: state.selectedBrands,
+        settings: state.settings,
+      }),
+      migrate: (persistedState, version) => {
+        if (version < 1) {
+          const state = persistedState as Partial<StoreState>;
+
+          return {
+            ...state,
+            dataset: null,
+            settings: {
+              ...DEFAULT_GENERATION_SETTINGS,
+              ...(state.settings ?? {}),
+            },
+          };
+        }
+
+        return persistedState as Partial<StoreState>;
+      },
+    },
+  ),
+);

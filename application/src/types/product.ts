@@ -2,15 +2,16 @@ export interface Product {
   id: string;
   brand: string;
   name: string;
+  description: string;
   slug: string;
   price: number;
   stock_quantity: number;
   category: string;
   sku: string;
-  weight_kg: number;
+  weight_kg: number | null;
   length_cm: number | null;
-  width_cm: number;
-  height_cm: number;
+  width_cm: number | null;
+  height_cm: number | null;
   images: string[];
   attributes: Record<string, any>;
 }
@@ -22,6 +23,17 @@ export interface PriceRange {
 
 export type IdFormat = 'uuid' | 'sequential' | 'custom';
 
+export type DimensionKey = 'weight_kg' | 'length_cm' | 'width_cm' | 'height_cm';
+
+export interface DimensionRange {
+  min: number;
+  max: number;
+  fractionDigits?: number;
+  nullableProbability?: number;
+}
+
+export type DimensionProfile = Record<DimensionKey, DimensionRange>;
+
 export interface CategoryTemplate {
   id: string;
   name: string;
@@ -31,7 +43,11 @@ export interface CategoryTemplate {
   defaultBrands: string[];
   models: string[]; // Generic fallback models
   brandModels: Record<string, string[]>; // Brand-specific models
-  variants: string[];
+  variants?: string[];
+  nameTemplate: string;
+  nameParts?: Record<string, string[]>;
+  usesVariantInName: boolean;
+  dimensions: DimensionProfile;
   attributes: AttributeDefinition[];
   priceRange: PriceRange; // Global price range for this category
   idFormat: IdFormat; // Format for generating product IDs
@@ -41,7 +57,7 @@ export interface CategoryTemplate {
 export interface AttributeDefinition {
   key: string;
   type: 'select' | 'number' | 'boolean' | 'text';
-  options?: string[] | number[];
+  options?: string[];
   min?: number;
   max?: number;
 }

@@ -18,12 +18,14 @@ import {
   Type,
   List,
   Car,
-  Box,
   Layers,
-  MoreVertical,
-  ChevronLeft,
-  DollarSign
 } from 'lucide-react';
+import {
+  isValidPriceRange,
+  normalizeAttributeKey,
+  normalizeSkuPrefix,
+  slugify,
+} from '../core/normalize';
 
 // Attribute type options
 const ATTRIBUTE_TYPES = [
@@ -54,27 +56,27 @@ export const EcommerceSidebar: React.FC = () => {
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
-  addBrandModel,
-  removeBrandModel,
-  updateBrandModel,
-  toggleBrandModel,
-  selectAllBrandModels,
-  deselectAllBrandModels,
-  updateCategoryPriceRange,
-  updateBrandPriceRange,
-  removeBrandPriceRange,
-  setModelPrice,
-  removeModelPrice,
+    addBrandModel,
+    removeBrandModel,
+    updateBrandModel,
+    toggleBrandModel,
+    selectAllBrandModels,
+    deselectAllBrandModels,
+    updateCategoryPriceRange,
+    updateBrandPriceRange,
+    removeBrandPriceRange,
+    setModelPrice,
+    removeModelPrice,
 } = useStore();
 
   // Brand state
   const [newBrandName, setNewBrandName] = useState('');
   const [editingBrand, setEditingBrand] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
-const [newModelName, setNewModelName] = useState('');
-const [editingModel, setEditingModel] = useState<{ brandId: string; model: string } | null>(null);
-const [editModelName, setEditModelName] = useState('');
+  const [editingBrandModels, setEditingBrandModels] = useState<string | null>(null);
+  const [newModelName, setNewModelName] = useState('');
+  const [editingModel, setEditingModel] = useState<{ brandId: string; model: string } | null>(null);
+  const [editModelName, setEditModelName] = useState('');
   
   // Attribute state
   const [editingAttr, setEditingAttr] = useState<string | null>(null);
@@ -156,8 +158,8 @@ const [editModelName, setEditModelName] = useState('');
     if (editCategoryName.trim() && editSkuPrefix.trim()) {
       const updates: Partial<CategoryTemplate> = {
         name: editCategoryName.trim(),
-        skuPrefix: editSkuPrefix.trim().toUpperCase(),
-        slug: editCategoryName.trim().toLowerCase().replace(/\s+/g, '-'),
+        skuPrefix: editSkuPrefix,
+        slug: slugify(editCategoryName),
         idFormat: editIdFormat,
       };
       if (editIdFormat === 'custom') {
@@ -184,7 +186,7 @@ const [editModelName, setEditModelName] = useState('');
   };
 
   const saveCategoryPriceEdit = () => {
-    if (editCatPriceMin >= 0 && editCatPriceMax > editCatPriceMin) {
+    if (isValidPriceRange(editCatPriceMin, editCatPriceMax)) {
       updateCategoryPriceRange(selectedCategory.id, editCatPriceMin, editCatPriceMax);
       setEditingCategoryPrice(false);
     }
@@ -201,7 +203,7 @@ const [editModelName, setEditModelName] = useState('');
   };
 
   const saveBrandPriceEdit = (brandId: string) => {
-    if (editBrandPriceMin >= 0 && editBrandPriceMax > editBrandPriceMin) {
+    if (isValidPriceRange(editBrandPriceMin, editBrandPriceMax)) {
       updateBrandPriceRange(brandId, editBrandPriceMin, editBrandPriceMax);
       setEditingBrandPrice(null);
     }
@@ -258,7 +260,7 @@ const [editModelName, setEditModelName] = useState('');
       
       // Handle key rename if changed
       if (editAttrKey.trim() && editAttrKey !== editingAttr) {
-        renameAttributeKey(selectedCategory.id, editingAttr, editAttrKey.trim().toLowerCase().replace(/\s+/g, '_'));
+        renameAttributeKey(selectedCategory.id, editingAttr, normalizeAttributeKey(editAttrKey));
       }
       
       setEditingAttr(null);
@@ -275,7 +277,7 @@ const [editModelName, setEditModelName] = useState('');
   const handleAddAttribute = () => {
     if (newAttrKey.trim()) {
       const newAttr: AttributeDefinition = {
-        key: newAttrKey.trim().toLowerCase().replace(/\s+/g, '_'),
+        key: normalizeAttributeKey(newAttrKey),
         type: 'select',
         options: [],
       };
@@ -375,10 +377,11 @@ const [editModelName, setEditModelName] = useState('');
               {editingCategory ? (
                 <div className="space-y-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                   <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                    <label htmlFor="edit-category-name" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                       Category Name
                     </label>
                     <input
+                      id="edit-category-name"
                       type="text"
                       value={editCategoryName}
                       onChange={(e) => setEditCategoryName(e.target.value)}
@@ -386,21 +389,23 @@ const [editModelName, setEditModelName] = useState('');
                     />
                   </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                  <label htmlFor="edit-sku-prefix" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                     SKU Prefix
                   </label>
                   <input
+                    id="edit-sku-prefix"
                     type="text"
                     value={editSkuPrefix}
-                    onChange={(e) => setEditSkuPrefix(e.target.value.toUpperCase())}
+                    onChange={(e) => setEditSkuPrefix(normalizeSkuPrefix(e.target.value))}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                  <label htmlFor="edit-id-format" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                     ID Format
                   </label>
                   <select
+                    id="edit-id-format"
                     value={editIdFormat}
                     onChange={(e) => setEditIdFormat(e.target.value as 'uuid' | 'sequential' | 'custom')}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
@@ -412,10 +417,11 @@ const [editModelName, setEditModelName] = useState('');
                 </div>
                 {editIdFormat === 'custom' && (
                   <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                    <label htmlFor="edit-id-prefix" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                       ID Prefix
                     </label>
                     <input
+                      id="edit-id-prefix"
                       type="text"
                       value={editIdPrefix}
                       onChange={(e) => setEditIdPrefix(e.target.value)}
@@ -631,8 +637,7 @@ const [editModelName, setEditModelName] = useState('');
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') saveBrandEdit();
                               if (e.key === 'Escape') cancelBrandEdit();
-                            }}
-                            autoFocus
+                            }                            }
                             className="flex-1 bg-slate-950 border border-indigo-500 rounded px-2 py-1 text-sm outline-none text-slate-200"
                           />
                           <button
@@ -805,8 +810,7 @@ const [editModelName, setEditModelName] = useState('');
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') saveModelEdit();
                                         if (e.key === 'Escape') cancelModelEdit();
-                                      }}
-                                      autoFocus
+                                      }                                      }
                                       className="flex-1 bg-slate-950 border border-indigo-500 rounded px-2 py-1 text-sm outline-none text-slate-200"
                                     />
                                     <button
@@ -825,8 +829,9 @@ const [editModelName, setEditModelName] = useState('');
                   ) : (
                     <>
                       <div className="flex-1">
-                        <span
-                          className={`text-sm cursor-pointer ${
+                        <button
+                          type="button"
+                          className={`text-sm text-left cursor-pointer ${
                             brand.selectedModels.includes(model)
                               ? 'text-slate-300'
                               : 'text-slate-500'
@@ -834,7 +839,7 @@ const [editModelName, setEditModelName] = useState('');
                           onClick={() => startEditingModelName(brand.id, model)}
                         >
                           {model}
-                        </span>
+                        </button>
                         {editingModelPrice?.brandId === brand.id && editingModelPrice?.model === model ? (
                           <div className="mt-1 flex items-center gap-1">
                             <span className="text-xs text-slate-500">$</span>
@@ -846,8 +851,7 @@ const [editModelName, setEditModelName] = useState('');
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') saveModelPriceEdit();
                                 if (e.key === 'Escape') cancelModelPriceEdit();
-                              }}
-                              autoFocus
+                              }                              }
                               className="w-16 bg-slate-950 border border-indigo-500 rounded px-1.5 py-0.5 text-xs outline-none text-slate-200"
                             />
                             <button
@@ -934,8 +938,7 @@ const [editModelName, setEditModelName] = useState('');
                               setEditingBrandModels(null);
                               setNewModelName('');
                             }
-                          }}
-                          autoFocus
+                          }                          }
                           className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 placeholder:text-slate-600"
                         />
                         <button
@@ -1051,10 +1054,11 @@ const [editModelName, setEditModelName] = useState('');
                   <div className="space-y-3">
                     {/* Edit Attribute Form */}
                     <div>
-                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                      <label htmlFor="edit-attr-key" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                         Key
                       </label>
                       <input
+                        id="edit-attr-key"
                         type="text"
                         value={editAttrKey}
                         onChange={(e) => setEditAttrKey(e.target.value)}
@@ -1063,9 +1067,9 @@ const [editModelName, setEditModelName] = useState('');
                     </div>
 
                     <div>
-                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                         Type
-                      </label>
+                      </span>
                           <div className="grid grid-cols-2 gap-2">
                             {ATTRIBUTE_TYPES.map((type) => (
                               <button
@@ -1087,10 +1091,11 @@ const [editModelName, setEditModelName] = useState('');
                         {editAttrType === 'number' && (
                           <div className="flex gap-2">
                             <div className="flex-1">
-                              <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                              <label htmlFor="edit-attr-min" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                                 Min
                               </label>
                               <input
+                                id="edit-attr-min"
                                 type="number"
                                 value={editAttrMin}
                                 onChange={(e) => setEditAttrMin(parseInt(e.target.value) || 0)}
@@ -1098,10 +1103,11 @@ const [editModelName, setEditModelName] = useState('');
                               />
                             </div>
                             <div className="flex-1">
-                              <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                              <label htmlFor="edit-attr-max" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                                 Max
                               </label>
                               <input
+                                id="edit-attr-max"
                                 type="number"
                                 value={editAttrMax}
                                 onChange={(e) => setEditAttrMax(parseInt(e.target.value) || 100)}
@@ -1114,9 +1120,9 @@ const [editModelName, setEditModelName] = useState('');
                         {/* Options for select type */}
                         {(editAttrType === 'select' || attr.type === 'select') && (
                           <div>
-                            <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
                               Options
-                            </label>
+                            </span>
                             <div className="flex flex-wrap gap-1 mb-2">
                               {attr.options?.map((opt) => (
                                 <span

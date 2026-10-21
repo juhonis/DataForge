@@ -1,30 +1,71 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
+import { PresetBar } from './components/PresetBar';
 import { useStore } from './store/useStore';
-import { generateProducts, downloadJSON } from './core/productGenerator';
-import { Play, Download, Copy, Database, Trash2, Package, Sparkles } from 'lucide-react';
+import { generateDataset } from './core/generate';
+import { generateProducts } from './core/generate/product';
+import { toCsv } from './core/exporters/csv';
+import { toJson } from './core/exporters/json';
+import { datasetToSql, type SqlDialect } from './core/exporters/sql';
+import { SeededRng } from './core/rng';
+import { downloadText } from './lib/download';
+import type { Dataset } from './types/dataset';
+import {
+  Play,
+  Copy,
+  Database,
+  Trash2,
+  Package,
+  Sparkles,
+  FileSpreadsheet,
+  FileJson,
+  FileCode2,
+} from 'lucide-react';
+
+const DATASET_TABS = [
+  { key: 'products', label: 'Products' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'orders', label: 'Orders' },
+  { key: 'order_lines', label: 'Order Lines' },
+  { key: 'reviews', label: 'Reviews' },
+] as const;
+
+type DatasetTab = (typeof DATASET_TABS)[number]['key'];
+
+const EMPTY_PRODUCTS: Dataset['products'] = [];
+const EMPTY_ROWS: object[] = [];
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const clampCount = (value: string, fallback: number, max: number): number => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : clamp(parsed, 0, max);
+};
 
 function App() {
   const {
     selectedCategory,
     brands,
     selectedBrands,
-    products,
-    setProducts,
-    clearProducts,
+    dataset,
+    setDataset,
+    clearDataset,
+    settings,
+    updateSettings,
   } = useStore();
 
-  const [count, setCount] = useState(20);
+  const [activeTab, setActiveTab] = useState<DatasetTab>('products');
+  const [sqlDialect, setSqlDialect] = useState<SqlDialect>('postgres');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(true);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-  
+
   // Refs to track previous config for comparison
   const prevConfigRef = useRef('');
 
-  // Real-time preview generation
+  // Clear the dataset whenever the generation config changes
   useEffect(() => {
-    // Create a config signature from current state
     const configSignature = JSON.stringify({
       category: selectedCategory.id,
       skuPrefix: selectedCategory.skuPrefix,
@@ -46,58 +87,166 @@ function App() {
         min: a.min,
         max: a.max,
       })),
+      seed: settings.seed,
+      customerCount: settings.customerCount,
+      ordersPerCustomer: settings.ordersPerCustomer,
+      reviewCount: settings.reviewCount,
     });
 
-    // Only regenerate if config actually changed
-    if (configSignature !== prevConfigRef.current) {
-      prevConfigRef.current = configSignature;
-      
-      // Clear any existing generated products when config changes
-      if (!isPreviewMode && products.length > 0) {
-        clearProducts();
-        setIsPreviewMode(true);
-      }
-      
-      // Generate preview if we have selected brands
-      if (selectedBrands.length > 0) {
-        setIsLoadingPreview(true);
-        // Small delay to prevent excessive re-renders
-        const timeoutId = setTimeout(() => {
-          const data = generateProducts(selectedCategory, brands, selectedBrands, 1);
-          setProducts(data);
-          setIsLoadingPreview(false);
-        }, 150);
-        
-        return () => clearTimeout(timeoutId);
-      } else if (products.length > 0) {
-        clearProducts();
-      }
+    if (configSignature === prevConfigRef.current) return;
+
+    prevConfigRef.current = configSignature;
+    clearDataset();
+  }, [
+    selectedCategory,
+    brands,
+    selectedBrands,
+    settings.seed,
+    settings.customerCount,
+    settings.ordersPerCustomer,
+    settings.reviewCount,
+    clearDataset,
+  ]);
+
+  // Generate a one-product preview whenever no dataset is present
+  useEffect(() => {
+    if (dataset !== null) return;
+
+    if (selectedBrands.length === 0) {
+      setIsLoadingPreview(false);
+      return;
     }
-  }, [selectedCategory, brands, selectedBrands, selectedCategory.idFormat, selectedCategory.idPrefix]);
+
+    setIsLoadingPreview(true);
+    const timeoutId = setTimeout(() => {
+      const products = generateProducts(
+        selectedCategory,
+        brands,
+        selectedBrands,
+        1,
+        new SeededRng(settings.seed),
+      );
+      setDataset({
+        products,
+        customers: [],
+        orders: [],
+        order_lines: [],
+        reviews: [],
+      });
+      setIsPreviewMode(true);
+      setIsLoadingPreview(false);
+    }, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, [dataset, selectedCategory, brands, selectedBrands, settings.seed, setDataset]);
 
   const handleGenerate = () => {
     if (selectedBrands.length === 0) return;
 
     setIsGenerating(true);
     setIsPreviewMode(false);
-    // Small delay to show loading state
+    setActiveTab('products');
+
     setTimeout(() => {
-      const data = generateProducts(selectedCategory, brands, selectedBrands, count);
-      setProducts(data);
+      const data = generateDataset(
+        selectedCategory,
+        brands,
+        selectedBrands,
+        {
+          productCount: settings.productCount,
+          customerCount: settings.customerCount,
+          ordersPerCustomer: settings.ordersPerCustomer,
+          reviewCount: settings.reviewCount,
+        },
+        new SeededRng(settings.seed),
+      );
+      setDataset(data);
       setIsGenerating(false);
     }, 100);
   };
 
-  const handleDownload = () => {
-    if (products.length === 0) return;
-    const filename = `${selectedCategory.slug}-products`;
-    downloadJSON(products, filename);
+  const handleClear = () => {
+    clearDataset();
+    setIsPreviewMode(true);
+    setActiveTab('products');
   };
+
+  const handlePresetApplied = () => {
+    setIsPreviewMode(true);
+    setActiveTab('products');
+  };
+
+  const activeRows = dataset ? dataset[activeTab] : EMPTY_ROWS;
+  const activeTabLabel =
+    DATASET_TABS.find((tab) => tab.key === activeTab)?.label ?? 'Dataset';
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(JSON.stringify(products, null, 2));
+    if (activeRows.length === 0) return;
+    navigator.clipboard.writeText(toJson(activeRows));
   };
 
+  const handleDownloadCsv = () => {
+    if (activeRows.length === 0) return;
+    downloadText(
+      toCsv(activeRows),
+      `${selectedCategory.slug}-${activeTab}.csv`,
+      'text/csv;charset=utf-8',
+    );
+  };
+
+  const handleDownloadJson = () => {
+    if (!dataset) return;
+    downloadText(
+      toJson(dataset),
+      `${selectedCategory.slug}-dataset.json`,
+      'application/json',
+    );
+  };
+
+  const handleDownloadSql = () => {
+    if (!dataset) return;
+    downloadText(
+      datasetToSql(dataset, { dialect: sqlDialect, seed: settings.seed }),
+      `${selectedCategory.slug}-dataset-${sqlDialect}.sql`,
+      'application/sql',
+    );
+  };
+
+  const updateCustomerCount = (value: string) => {
+    updateSettings({
+      customerCount: clampCount(value, settings.customerCount, 1000),
+    });
+  };
+
+  const updateReviewCount = (value: string) => {
+    updateSettings({
+      reviewCount: clampCount(value, settings.reviewCount, 1000),
+    });
+  };
+
+  const updateMinOrders = (value: string) => {
+    const min = clampCount(value, settings.ordersPerCustomer.min, 10);
+
+    updateSettings({
+      ordersPerCustomer: {
+        min,
+        max: Math.max(min, settings.ordersPerCustomer.max),
+      },
+    });
+  };
+
+  const updateMaxOrders = (value: string) => {
+    const max = clampCount(value, settings.ordersPerCustomer.max, 10);
+
+    updateSettings({
+      ordersPerCustomer: {
+        min: Math.min(max, settings.ordersPerCustomer.min),
+        max,
+      },
+    });
+  };
+
+  const products = dataset?.products ?? EMPTY_PRODUCTS;
   const selectedCount = selectedBrands.length;
   const canGenerate = selectedCount > 0;
 
@@ -145,9 +294,9 @@ function App() {
             {[5, 10, 25, 50, 100].map((num) => (
               <button
                 key={num}
-                onClick={() => setCount(num)}
+                onClick={() => updateSettings({ productCount: num })}
                 className={`px-2 lg:px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  count === num
+                  settings.productCount === num
                     ? 'bg-indigo-600 text-white'
                     : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                 }`}
@@ -162,10 +311,71 @@ function App() {
                 min={1}
                 max={1000}
                 className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-                value={count}
-                onChange={(e) => setCount(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
+                value={settings.productCount}
+                onChange={(e) => updateSettings({
+                  productCount: Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)),
+                })}
               />
             </div>
+          </div>
+
+          {/* Related Data */}
+          <div className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg">
+            <label htmlFor="customer-count" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
+              Customers
+            </label>
+            <input
+              id="customer-count"
+              type="number"
+              min={0}
+              max={1000}
+              aria-label="Customer count"
+              className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
+              value={settings.customerCount}
+              onChange={(event) => updateCustomerCount(event.target.value)}
+            />
+
+            <div className="h-4 w-px bg-slate-700" />
+
+            <label htmlFor="min-orders" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
+              Orders/customer
+            </label>
+            <input
+              id="min-orders"
+              type="number"
+              min={0}
+              max={10}
+              aria-label="Minimum orders per customer"
+              className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
+              value={settings.ordersPerCustomer.min}
+              onChange={(event) => updateMinOrders(event.target.value)}
+            />
+            <span className="text-slate-600">–</span>
+            <input
+              type="number"
+              min={0}
+              max={10}
+              aria-label="Maximum orders per customer"
+              className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
+              value={settings.ordersPerCustomer.max}
+              onChange={(event) => updateMaxOrders(event.target.value)}
+            />
+
+            <div className="h-4 w-px bg-slate-700" />
+
+            <label htmlFor="review-count" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
+              Reviews
+            </label>
+            <input
+              id="review-count"
+              type="number"
+              min={0}
+              max={1000}
+              aria-label="Review count"
+              className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
+              value={settings.reviewCount}
+              onChange={(event) => updateReviewCount(event.target.value)}
+            />
           </div>
 
           <div className="h-6 lg:h-8 w-px bg-slate-800 hidden sm:block" />
@@ -174,10 +384,7 @@ function App() {
           <div className="flex items-center gap-2">
             {!isPreviewMode && products.length > 0 && (
               <button
-                onClick={() => {
-                  clearProducts();
-                  setIsPreviewMode(true);
-                }}
+                onClick={handleClear}
                 className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-2 rounded-lg font-bold text-sm text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
               >
                 <Trash2 className="w-3.5 lg:w-4 h-3.5 lg:h-4" />
@@ -195,7 +402,7 @@ function App() {
               ) : (
                 <Play className="w-3 h-3 fill-current" />
               )}
-              <span>Generate {count}</span>
+              <span>Generate {settings.productCount}</span>
             </button>
           </div>
         </div>
@@ -206,6 +413,8 @@ function App() {
         <EcommerceSidebar />
 
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <PresetBar onPresetApplied={handlePresetApplied} />
+
           {/* Editor/Preview Surface */}
           <div className="flex-1 p-6 bg-slate-950 overflow-hidden">
             <div className="h-full bg-slate-900 border border-slate-800 rounded-2xl flex flex-col shadow-2xl overflow-hidden">
@@ -225,22 +434,80 @@ function App() {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={copyToClipboard}
-                    disabled={products.length === 0}
+                    disabled={activeRows.length === 0}
+                    title="Copy active dataset as JSON"
+                    aria-label="Copy active dataset as JSON"
                     className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={handleDownload}
-                    disabled={products.length === 0}
+                    onClick={handleDownloadCsv}
+                    disabled={activeRows.length === 0}
+                    title="Download active dataset as CSV"
+                    aria-label="Download active dataset as CSV"
                     className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Download className="w-4 h-4" />
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleDownloadJson}
+                    disabled={!dataset}
+                    title="Download full dataset as JSON"
+                    aria-label="Download full dataset as JSON"
+                    className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FileJson className="w-4 h-4" />
+                  </button>
+                  <select
+                    value={sqlDialect}
+                    onChange={(event) => setSqlDialect(event.target.value as SqlDialect)}
+                    aria-label="SQL dialect"
+                    className="bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold uppercase text-slate-400 px-1.5 py-1.5 outline-none"
+                  >
+                    <option value="postgres">Postgres</option>
+                    <option value="mysql">MySQL</option>
+                  </select>
+                  <button
+                    onClick={handleDownloadSql}
+                    disabled={!dataset}
+                    title="Download full dataset as SQL"
+                    aria-label="Download full dataset as SQL"
+                    className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FileCode2 className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+
+              {/* Dataset Tabs */}
+              <div className="px-6 py-2 border-b border-slate-800 bg-slate-900/40 flex items-center gap-1 overflow-x-auto">
+                {DATASET_TABS.map((tab) => {
+                  const rows = dataset?.[tab.key];
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
+                        activeTab === tab.key
+                          ? 'bg-indigo-600 text-white'
+                          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      }`}
+                    >
+                      {tab.label}
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                        activeTab === tab.key
+                          ? 'bg-indigo-500/60'
+                          : 'bg-slate-800 text-slate-500'
+                      }`}>
+                        {rows?.length ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Stats Bar - Only show for generated products (not preview) */}
@@ -271,25 +538,29 @@ function App() {
 
               {/* JSON Content */}
               <div className="flex-1 overflow-auto p-8 font-mono text-sm leading-relaxed custom-scrollbar">
-                {products.length > 0 ? (
+                {activeRows.length > 0 ? (
                   <div className="relative">
-                    {isPreviewMode && (
+                    {isPreviewMode && activeTab === 'products' && (
                       <div className="absolute -top-2 -left-2 px-3 py-1 bg-amber-500/20 border border-amber-500/50 rounded-full text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Sparkles className="w-3 h-3" />
                         Live Preview
                       </div>
                     )}
                     <pre className={`whitespace-pre-wrap ${isPreviewMode ? 'text-amber-400/90' : 'text-emerald-400/90'}`}>
-                      {JSON.stringify(products, null, 2)}
+                      {toJson(activeRows)}
                     </pre>
                   </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-slate-700 space-y-4">
                     <Database className="w-12 h-12 opacity-10" />
                     <div className="text-center">
-                      <p className="text-sm font-medium opacity-40 uppercase tracking-widest mb-2">Select Brands to Preview</p>
+                      <p className="text-sm font-medium opacity-40 uppercase tracking-widest mb-2">
+                        {dataset ? `No ${activeTabLabel} Data` : 'Select Brands to Preview'}
+                      </p>
                       <p className="text-xs text-slate-600 max-w-xs">
-                        Select brands in the sidebar to see a live preview of your product configuration
+                        {dataset
+                          ? 'Generate a full dataset to populate this tab.'
+                          : 'Select brands in the sidebar to see a live preview of your product configuration'}
                       </p>
                     </div>
                   </div>
