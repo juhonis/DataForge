@@ -41,7 +41,7 @@ export interface CategoryTemplate {
 export interface AttributeDefinition {
   key: string;
   type: 'select' | 'number' | 'boolean' | 'text';
-  options?: string[] | number[];
+  options?: string[];
   min?: number;
   max?: number;
 }

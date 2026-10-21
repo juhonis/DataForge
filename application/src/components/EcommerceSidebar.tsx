@@ -18,11 +18,7 @@ import {
   Type,
   List,
   Car,
-  Box,
   Layers,
-  MoreVertical,
-  ChevronLeft,
-  DollarSign
 } from 'lucide-react';
 
 // Attribute type options

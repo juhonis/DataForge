@@ -33,11 +33,6 @@ const getRandomItem = <T>(arr: T[]): T => {
   return arr[Math.floor(Math.random() * arr.length)];
 };
 
-const getRandomItems = <T>(arr: T[], count: number): T[] => {
-  const shuffled = [...arr].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
-};
-
 const generateAttributeValue = (def: AttributeDefinition): any => {
   switch (def.type) {
     case 'select':
@@ -163,7 +158,7 @@ const generateDimensions = (category: CategoryTemplate) => {
 export const generateProduct = (
   category: CategoryTemplate,
   brand: Brand,
-  existingProducts: Product[] = [],
+  _existingProducts: Product[] = [],
   index?: number
 ): Product => {
   const id = generateId(category.idFormat, category.idPrefix, index);
