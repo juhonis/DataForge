@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
 import { useStore } from './store/useStore';
 import { generateProducts } from './core/generate/product';
+import { toJson } from './core/exporters/json';
 import { Play, Download, Copy, Database, Trash2, Package, Sparkles } from 'lucide-react';
 
 const downloadText = (contents: string, filename: string, mimeType: string) => {
@@ -103,11 +104,11 @@ function App() {
   const handleDownload = () => {
     if (products.length === 0) return;
     const filename = `${selectedCategory.slug}-products.json`;
-    downloadText(JSON.stringify(products, null, 2), filename, 'application/json');
+    downloadText(toJson(products), filename, 'application/json');
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(JSON.stringify(products, null, 2));
+    navigator.clipboard.writeText(toJson(products));
   };
 
   const selectedCount = selectedBrands.length;
