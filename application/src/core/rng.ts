@@ -10,6 +10,14 @@ export interface Rng {
     shuffle<T>(items: readonly T[]): T[];
     uuid(): string;
     word(): string;
+    fullName(): string;
+    email(): string;
+    phone(): string;
+    city(): string;
+    country(): string;
+    sentence(wordCount?: number): string;
+    productDescription(): string;
+    dateBetween(from: Date, to: Date): Date;
 }
 
 export class SeededRng implements Rng {
@@ -67,5 +75,37 @@ export class SeededRng implements Rng {
 
     word(): string {
         return this.faker.lorem.word();
+    }
+
+    fullName(): string {
+        return this.faker.person.fullName();
+    }
+
+    email(): string {
+        return this.faker.internet.email();
+    }
+
+    phone(): string {
+        return this.faker.phone.number();
+    }
+
+    city(): string {
+        return this.faker.location.city();
+    }
+
+    country(): string {
+        return this.faker.location.country();
+    }
+
+    sentence(wordCount?: number): string {
+        return this.faker.lorem.sentence(wordCount);
+    }
+
+    productDescription(): string {
+        return this.faker.commerce.productDescription();
+    }
+
+    dateBetween(from: Date, to: Date): Date {
+        return this.faker.date.between({ from, to });
     }
 }

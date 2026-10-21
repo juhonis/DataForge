@@ -15,6 +15,23 @@ const sample = (seed: number) => {
     }))
 }
 
+const datasetSample = (seed: number) => {
+    const rng = new SeededRng(seed)
+    const from = new Date('2025-01-01T00:00:00Z')
+    const to = new Date('2025-12-31T23:59:59Z')
+
+    return Array.from({ length: 5 }, () => ({
+        fullName: rng.fullName(),
+        email: rng.email(),
+        phone: rng.phone(),
+        city: rng.city(),
+        country: rng.country(),
+        sentence: rng.sentence(6),
+        productDescription: rng.productDescription(),
+        date: rng.dateBetween(from, to).toISOString(),
+    }))
+}
+
 describe('SeededRng', () => {
     it('produces the same sequence for the same seed', () => {
         expect(sample(42)).toEqual(sample(42))
@@ -22,6 +39,36 @@ describe('SeededRng', () => {
 
     it('produces a different sequence for a different seed', () => {
         expect(sample(1)).not.toEqual(sample(2))
+    })
+
+    it('produces deterministic dataset fields for the same seed', () => {
+        expect(datasetSample(42)).toEqual(datasetSample(42))
+        expect(datasetSample(1)).not.toEqual(datasetSample(2))
+    })
+
+    it('keeps generated dates inside the requested bounds', () => {
+        const rng = new SeededRng(7)
+        const from = new Date('2024-01-01T00:00:00Z')
+        const to = new Date('2024-12-31T23:59:59Z')
+
+        for (let i = 0; i < 1000; i++) {
+            const value = rng.dateBetween(from, to)
+
+            expect(value.getTime()).toBeGreaterThanOrEqual(from.getTime())
+            expect(value.getTime()).toBeLessThanOrEqual(to.getTime())
+        }
+    })
+
+    it('generates non-empty dataset text fields', () => {
+        const rng = new SeededRng(7)
+
+        expect(rng.fullName().trim()).not.toBe('')
+        expect(rng.email().trim()).not.toBe('')
+        expect(rng.phone().trim()).not.toBe('')
+        expect(rng.city().trim()).not.toBe('')
+        expect(rng.country().trim()).not.toBe('')
+        expect(rng.sentence(6).trim()).not.toBe('')
+        expect(rng.productDescription().trim()).not.toBe('')
     })
 
     it('can be reseeded mid-stream', () => {
