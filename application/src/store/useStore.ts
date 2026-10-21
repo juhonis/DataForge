@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { CategoryTemplate, Brand, Product, AttributeDefinition } from '../types/product';
+import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
+import type { Dataset } from '../types/dataset';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
@@ -46,10 +47,10 @@ interface StoreState {
   setModelPrice: (brandId: string, model: string, price: number) => void;
   removeModelPrice: (brandId: string, model: string) => void;
 
-  // Generated products
-  products: Product[];
-  setProducts: (products: Product[]) => void;
-  clearProducts: () => void;
+  // Generated dataset
+  dataset: Dataset | null;
+  setDataset: (dataset: Dataset) => void;
+  clearDataset: () => void;
 }
 
 const defaultCategory = getDefaultCategory();
@@ -82,7 +83,7 @@ export const useStore = create<StoreState>((set, get) => ({
       selectedCategory: category,
       brands,
       selectedBrands: brands.map(b => b.id),
-      products: [],
+      dataset: null,
     });
   },
   
@@ -119,7 +120,7 @@ export const useStore = create<StoreState>((set, get) => ({
         selectedCategory: newSelected,
         brands,
         selectedBrands: brands.map(b => b.id),
-        products: [],
+        dataset: null,
       };
     });
   },
@@ -410,8 +411,8 @@ removeAttribute: (categoryId, attributeKey) => {
     }));
   },
 
-  // Products
-  products: [],
-  setProducts: (products) => set({ products }),
-  clearProducts: () => set({ products: [] }),
+  // Dataset
+  dataset: null,
+  setDataset: (dataset) => set({ dataset }),
+  clearDataset: () => set({ dataset: null }),
 }));
