@@ -1,10 +1,24 @@
-import { faker } from '@faker-js/faker';
-import { Product, CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
+import type {
+  AttributeDefinition,
+  Brand,
+  CategoryTemplate,
+  DimensionKey,
+  DimensionProfile,
+  DimensionRange,
+  IdFormat,
+  Product,
+} from '../types/product';
+import { SeededRng, type Rng } from './rng';
 import { slugify } from './normalize';
 
 let sequentialCounter = 0;
 
-export const generateId = (format: 'uuid' | 'sequential' | 'custom', prefix?: string, index?: number): string => {
+export const generateId = (
+  format: IdFormat,
+  prefix?: string,
+  index?: number,
+  rng?: Pick<Rng, 'uuid'>,
+): string => {
   switch (format) {
     case 'sequential':
       return String(index ?? ++sequentialCounter);
@@ -12,7 +26,7 @@ export const generateId = (format: 'uuid' | 'sequential' | 'custom', prefix?: st
       return `${prefix ?? ''}${index ?? ++sequentialCounter}`;
     case 'uuid':
     default:
-      return crypto.randomUUID();
+      return rng ? rng.uuid() : crypto.randomUUID();
   }
 };
 
@@ -30,143 +44,150 @@ export const generateSlug = (name: string, id: string): string => {
   return [slugify(name), shortId].filter(Boolean).join('-');
 };
 
-const getRandomItem = <T>(arr: T[]): T => {
-  return arr[Math.floor(Math.random() * arr.length)];
+const interpolateTemplate = (
+  template: string,
+  values: Record<string, unknown>,
+): string =>
+  template
+    .replace(/\{(\w+)\}/g, (_match, key: string) => {
+      const value = values[key];
+      return value === undefined || value === null ? '' : String(value);
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const pickModel = (
+  brand: Brand,
+  category: CategoryTemplate,
+  rng: Rng,
+): string => {
+  const availableModels =
+    brand.selectedModels.length > 0
+      ? brand.selectedModels
+      : brand.models.length > 0
+        ? brand.models
+        : category.models;
+
+  return availableModels.length > 0 ? rng.pick(availableModels) : '';
 };
 
-const generateAttributeValue = (def: AttributeDefinition): any => {
-  switch (def.type) {
+const generateAttributeValue = (
+  definition: AttributeDefinition,
+  rng: Rng,
+): unknown => {
+  switch (definition.type) {
     case 'select':
-      return getRandomItem(def.options || []);
+      return definition.options && definition.options.length > 0
+        ? rng.pick(definition.options)
+        : null;
     case 'number':
-      return Math.floor(Math.random() * ((def.max || 100) - (def.min || 0) + 1)) + (def.min || 0);
+      return rng.int(definition.min ?? 0, definition.max ?? 100);
     case 'boolean':
-      return Math.random() > 0.5;
+      return rng.bool();
     case 'text':
-      return faker.lorem.word();
+      return rng.word();
     default:
       return null;
   }
 };
 
-const generateAttributes = (attributeDefs: AttributeDefinition[]): Record<string, any> => {
-  const attributes: Record<string, any> = {};
-  
-  attributeDefs.forEach((def) => {
-    attributes[def.key] = generateAttributeValue(def);
-  });
-  
+const generateAttributes = (
+  definitions: AttributeDefinition[],
+  rng: Rng,
+): Record<string, unknown> => {
+  const attributes: Record<string, unknown> = {};
+
+  for (const definition of definitions) {
+    attributes[definition.key] = generateAttributeValue(definition, rng);
+  }
+
   return attributes;
 };
 
 const generateProductName = (
   brand: Brand,
   category: CategoryTemplate,
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>,
+  rng: Rng,
 ): { name: string; model: string } => {
-  // Use only selected models for this brand
-  const availableModels = brand.selectedModels.length > 0 
-    ? brand.selectedModels 
-    : (brand.models.length > 0 ? brand.models : []);
-  
-  const model = availableModels.length > 0 
-    ? getRandomItem(availableModels)
-    : (category.variants && category.variants.length > 0 ? getRandomItem(category.variants) : '');
+  const model = pickModel(brand, category, rng);
+  const variants = category.variants ?? [];
+  const variant =
+    category.usesVariantInName && variants.length > 0
+      ? rng.pick(variants)
+      : '';
 
-  // For laptops: Brand + Model + Screen Size
-  if (category.id === 'laptops') {
-    const screenSize = attributes['screenSize'] || getRandomItem(['13 Inch', '14 Inch', '15 Inch', '16 Inch']);
-    return { name: `${brand.name} ${model} ${screenSize}`, model };
-  }
+  const nameParts = Object.fromEntries(
+    Object.entries(category.nameParts ?? {}).map(([key, options]) => [
+      key,
+      options.length > 0 ? rng.pick(options) : '',
+    ]),
+  );
 
-  // For audio: Brand + Model + Variant
-  if (category.id === 'audio') {
-    const variant = category.variants && category.variants.length > 0 ? getRandomItem(category.variants) : '';
-    return { name: `${brand.name} ${model} ${variant}`.trim(), model };
-  }
+  const name = interpolateTemplate(category.nameTemplate, {
+    brand: brand.name,
+    model,
+    variant,
+    ...attributes,
+    ...nameParts,
+  });
 
-  // For accessories: Brand + Model + Device Type
-  if (category.id === 'accessories') {
-    const deviceType = getRandomItem(['Cable', 'Hub', 'Adapter']);
-    return { name: `${brand.name} ${model} ${deviceType}`, model };
-  }
-
-  // Default naming: Brand + Model
-  return { name: `${brand.name} ${model}`.trim(), model };
+  return { name, model };
 };
 
-const generatePrice = (brand: Brand, model: string, category: CategoryTemplate): number => {
-  // Priority 1: Exact model price
-  if (brand.modelPrices && brand.modelPrices[model] !== undefined) {
+const generatePrice = (
+  brand: Brand,
+  model: string,
+  category: CategoryTemplate,
+  rng: Rng,
+): number => {
+  if (brand.modelPrices[model] !== undefined) {
     return brand.modelPrices[model];
   }
-  
-  // Priority 2: Brand-specific price range
+
   if (brand.priceRange) {
-    return faker.number.int({ min: brand.priceRange.min, max: brand.priceRange.max });
+    return rng.int(brand.priceRange.min, brand.priceRange.max);
   }
-  
-  // Priority 3: Category default price range
-  return faker.number.int({ min: category.priceRange.min, max: category.priceRange.max });
+
+  return rng.int(category.priceRange.min, category.priceRange.max);
 };
 
-const generateDimensions = (category: CategoryTemplate) => {
-  if (category.id === 'laptops') {
-    return {
-      weight_kg: faker.number.float({ min: 1, max: 2.5, fractionDigits: 1 }),
-      length_cm: faker.number.int({ min: 30, max: 36 }),
-      width_cm: faker.number.int({ min: 21, max: 25 }),
-      height_cm: faker.number.int({ min: 1, max: 2 }),
-    };
+const generateDimension = (
+  range: DimensionRange,
+  rng: Rng,
+): number | null => {
+  if (
+    range.nullableProbability !== undefined &&
+    rng.bool(range.nullableProbability)
+  ) {
+    return null;
   }
-  
-  if (category.id === 'smartphones') {
-    return {
-      weight_kg: faker.number.float({ min: 0.15, max: 0.25, fractionDigits: 2 }),
-      length_cm: faker.number.int({ min: 14, max: 17 }),
-      width_cm: faker.number.int({ min: 7, max: 8 }),
-      height_cm: faker.number.float({ min: 0.7, max: 0.9, fractionDigits: 1 }),
-    };
-  }
-  
-  if (category.id === 'audio') {
-    return {
-      weight_kg: faker.number.float({ min: 0.05, max: 0.4, fractionDigits: 2 }),
-      length_cm: Math.random() > 0.5 ? faker.number.int({ min: 14, max: 17 }) : null,
-      width_cm: faker.number.int({ min: 7, max: 8 }),
-      height_cm: faker.number.float({ min: 0.7, max: 0.9, fractionDigits: 1 }),
-    };
-  }
-  
-  if (category.id === 'accessories') {
-    return {
-      weight_kg: faker.number.float({ min: 0.05, max: 0.2, fractionDigits: 2 }),
-      length_cm: Math.random() > 0.3 ? faker.number.int({ min: 14, max: 17 }) : null,
-      width_cm: faker.number.int({ min: 7, max: 8 }),
-      height_cm: faker.number.float({ min: 0.7, max: 0.9, fractionDigits: 1 }),
-    };
-  }
-  
-  // Default dimensions
-  return {
-    weight_kg: faker.number.float({ min: 0.1, max: 2, fractionDigits: 2 }),
-    length_cm: faker.number.int({ min: 10, max: 50 }),
-    width_cm: faker.number.int({ min: 5, max: 30 }),
-    height_cm: faker.number.float({ min: 1, max: 10, fractionDigits: 1 }),
-  };
+
+  return range.fractionDigits === undefined
+    ? rng.int(range.min, range.max)
+    : rng.float(range.min, range.max, range.fractionDigits);
 };
+
+const generateDimensions = (
+  profile: DimensionProfile,
+  rng: Rng,
+): Record<DimensionKey, number | null> => ({
+  weight_kg: generateDimension(profile.weight_kg, rng),
+  length_cm: generateDimension(profile.length_cm, rng),
+  width_cm: generateDimension(profile.width_cm, rng),
+  height_cm: generateDimension(profile.height_cm, rng),
+});
 
 export const generateProduct = (
   category: CategoryTemplate,
   brand: Brand,
-  _existingProducts: Product[] = [],
-  index?: number
+  rng: Rng,
+  index?: number,
 ): Product => {
-  const id = generateId(category.idFormat, category.idPrefix, index);
-  const attributes = generateAttributes(category.attributes);
-  const { name, model } = generateProductName(brand, category, attributes);
-  const dimensions = generateDimensions(category);
-  const price = generatePrice(brand, model, category);
+  const id = generateId(category.idFormat, category.idPrefix, index, rng);
+  const attributes = generateAttributes(category.attributes, rng);
+  const { name, model } = generateProductName(brand, category, attributes, rng);
+  const price = generatePrice(brand, model, category, rng);
 
   return {
     id,
@@ -174,11 +195,11 @@ export const generateProduct = (
     name,
     slug: generateSlug(name, id),
     price,
-    stock_quantity: faker.number.int({ min: 0, max: 100 }),
+    stock_quantity: rng.int(0, 100),
     category: category.name,
     sku: generateSKU(category.skuPrefix, id),
-    ...dimensions,
-    images: [getRandomItem(category.unsplashIds)],
+    ...generateDimensions(category.dimensions, rng),
+    images: [rng.pick(category.unsplashIds)],
     attributes,
   };
 };
@@ -188,24 +209,22 @@ export const generateProducts = (
   brands: Brand[],
   selectedBrandIds: string[],
   count: number,
-  resetCounter: boolean = true
+  rng: Rng = new SeededRng(),
 ): Product[] => {
   const products: Product[] = [];
-  const selectedBrands = brands.filter((b) => selectedBrandIds.includes(b.id));
+  const selectedBrands = brands.filter((brand) =>
+    selectedBrandIds.includes(brand.id),
+  );
 
   if (selectedBrands.length === 0) {
     return products;
   }
 
-  // Reset sequential counter if requested
-  if (resetCounter) {
-    resetSequentialCounter();
-  }
+  resetSequentialCounter();
 
   for (let i = 0; i < count; i++) {
     const brand = selectedBrands[i % selectedBrands.length];
-    const product = generateProduct(category, brand, products, i + 1);
-    products.push(product);
+    products.push(generateProduct(category, brand, rng, i + 1));
   }
 
   return products;
