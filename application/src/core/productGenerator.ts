@@ -71,7 +71,7 @@ const generateProductName = (
   
   const model = availableModels.length > 0 
     ? getRandomItem(availableModels)
-    : (category.variants.length > 0 ? getRandomItem(category.variants) : '');
+    : (category.variants && category.variants.length > 0 ? getRandomItem(category.variants) : '');
 
   // For laptops: Brand + Model + Screen Size
   if (category.id === 'laptops') {
@@ -81,7 +81,7 @@ const generateProductName = (
 
   // For audio: Brand + Model + Variant
   if (category.id === 'audio') {
-    const variant = category.variants.length > 0 ? getRandomItem(category.variants) : '';
+    const variant = category.variants && category.variants.length > 0 ? getRandomItem(category.variants) : '';
     return { name: `${brand.name} ${model} ${variant}`.trim(), model };
   }
 
