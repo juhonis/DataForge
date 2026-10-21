@@ -63,3 +63,8 @@ export interface RelatedDataConfig {
   ordersPerCustomer: CountRange;
   reviewCount: number;
 }
+
+export interface GenerationSettings extends RelatedDataConfig {
+  seed: number;
+  productCount: number;
+}

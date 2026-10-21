@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
-import type { Dataset } from '../types/dataset';
+import type { Dataset, GenerationSettings } from '../types/dataset';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
@@ -51,7 +52,19 @@ interface StoreState {
   dataset: Dataset | null;
   setDataset: (dataset: Dataset) => void;
   clearDataset: () => void;
+
+  // Generation settings
+  settings: GenerationSettings;
+  updateSettings: (updates: Partial<GenerationSettings>) => void;
 }
+
+export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
+  seed: 42,
+  productCount: 20,
+  customerCount: 50,
+  ordersPerCustomer: { min: 1, max: 3 },
+  reviewCount: 50,
+};
 
 const defaultCategory = getDefaultCategory();
 
@@ -73,7 +86,9 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
   });
 };
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
   // Category management
   categories: CATEGORY_TEMPLATES,
   selectedCategory: defaultCategory,
@@ -415,4 +430,41 @@ removeAttribute: (categoryId, attributeKey) => {
   dataset: null,
   setDataset: (dataset) => set({ dataset }),
   clearDataset: () => set({ dataset: null }),
-}));
+
+  // Generation settings
+  settings: DEFAULT_GENERATION_SETTINGS,
+  updateSettings: (updates) =>
+    set((state) => ({
+      settings: { ...state.settings, ...updates },
+    })),
+    }),
+    {
+      name: 'dataforge-config',
+      version: 1,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        categories: state.categories,
+        selectedCategory: state.selectedCategory,
+        brands: state.brands,
+        selectedBrands: state.selectedBrands,
+        settings: state.settings,
+      }),
+      migrate: (persistedState, version) => {
+        if (version < 1) {
+          const state = persistedState as Partial<StoreState>;
+
+          return {
+            ...state,
+            dataset: null,
+            settings: {
+              ...DEFAULT_GENERATION_SETTINGS,
+              ...(state.settings ?? {}),
+            },
+          };
+        }
+
+        return persistedState as Partial<StoreState>;
+      },
+    },
+  ),
+);

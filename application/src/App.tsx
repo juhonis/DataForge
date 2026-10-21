@@ -6,7 +6,8 @@ import { generateProducts } from './core/generate/product';
 import { toCsv } from './core/exporters/csv';
 import { toJson } from './core/exporters/json';
 import { datasetToSql, type SqlDialect } from './core/exporters/sql';
-import type { Dataset, RelatedDataConfig } from './types/dataset';
+import { SeededRng } from './core/rng';
+import type { Dataset } from './types/dataset';
 import {
   Play,
   Copy,
@@ -17,6 +18,7 @@ import {
   FileSpreadsheet,
   FileJson,
   FileCode2,
+  Dices,
 } from 'lucide-react';
 
 const DATASET_TABS = [
@@ -28,12 +30,6 @@ const DATASET_TABS = [
 ] as const;
 
 type DatasetTab = (typeof DATASET_TABS)[number]['key'];
-
-const DEFAULT_RELATED_DATA: RelatedDataConfig = {
-  customerCount: 50,
-  ordersPerCustomer: { min: 1, max: 3 },
-  reviewCount: 50,
-};
 
 const EMPTY_PRODUCTS: Dataset['products'] = [];
 const EMPTY_ROWS: object[] = [];
@@ -66,10 +62,10 @@ function App() {
     dataset,
     setDataset,
     clearDataset,
+    settings,
+    updateSettings,
   } = useStore();
 
-  const [count, setCount] = useState(20);
-  const [related, setRelated] = useState<RelatedDataConfig>(DEFAULT_RELATED_DATA);
   const [activeTab, setActiveTab] = useState<DatasetTab>('products');
   const [sqlDialect, setSqlDialect] = useState<SqlDialect>('postgres');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -102,14 +98,26 @@ function App() {
         min: a.min,
         max: a.max,
       })),
-      related,
+      seed: settings.seed,
+      customerCount: settings.customerCount,
+      ordersPerCustomer: settings.ordersPerCustomer,
+      reviewCount: settings.reviewCount,
     });
 
     if (configSignature === prevConfigRef.current) return;
 
     prevConfigRef.current = configSignature;
     clearDataset();
-  }, [selectedCategory, brands, selectedBrands, related, clearDataset]);
+  }, [
+    selectedCategory,
+    brands,
+    selectedBrands,
+    settings.seed,
+    settings.customerCount,
+    settings.ordersPerCustomer,
+    settings.reviewCount,
+    clearDataset,
+  ]);
 
   // Generate a one-product preview whenever no dataset is present
   useEffect(() => {
@@ -127,6 +135,7 @@ function App() {
         brands,
         selectedBrands,
         1,
+        new SeededRng(settings.seed),
       );
       setDataset({
         products,
@@ -140,7 +149,7 @@ function App() {
     }, 150);
 
     return () => clearTimeout(timeoutId);
-  }, [dataset, selectedCategory, brands, selectedBrands, setDataset]);
+  }, [dataset, selectedCategory, brands, selectedBrands, settings.seed, setDataset]);
 
   const handleGenerate = () => {
     if (selectedBrands.length === 0) return;
@@ -155,11 +164,12 @@ function App() {
         brands,
         selectedBrands,
         {
-          productCount: count,
-          customerCount: related.customerCount,
-          ordersPerCustomer: related.ordersPerCustomer,
-          reviewCount: related.reviewCount,
+          productCount: settings.productCount,
+          customerCount: settings.customerCount,
+          ordersPerCustomer: settings.ordersPerCustomer,
+          reviewCount: settings.reviewCount,
         },
+        new SeededRng(settings.seed),
       );
       setDataset(data);
       setIsGenerating(false);
@@ -202,51 +212,53 @@ function App() {
   const handleDownloadSql = () => {
     if (!dataset) return;
     downloadText(
-      datasetToSql(dataset, { dialect: sqlDialect }),
+      datasetToSql(dataset, { dialect: sqlDialect, seed: settings.seed }),
       `${selectedCategory.slug}-dataset-${sqlDialect}.sql`,
       'application/sql',
     );
   };
 
   const updateCustomerCount = (value: string) => {
-    setRelated((current) => ({
-      ...current,
-      customerCount: clampCount(value, current.customerCount, 1000),
-    }));
+    updateSettings({
+      customerCount: clampCount(value, settings.customerCount, 1000),
+    });
   };
 
   const updateReviewCount = (value: string) => {
-    setRelated((current) => ({
-      ...current,
-      reviewCount: clampCount(value, current.reviewCount, 1000),
-    }));
+    updateSettings({
+      reviewCount: clampCount(value, settings.reviewCount, 1000),
+    });
+  };
+
+  const updateSeed = (value: string) => {
+    updateSettings({ seed: clampCount(value, settings.seed, 1_000_000_000) });
+  };
+
+  const randomizeSeed = () => {
+    const values = new Uint32Array(1);
+    crypto.getRandomValues(values);
+    updateSettings({ seed: values[0] % 1_000_000_000 });
   };
 
   const updateMinOrders = (value: string) => {
-    setRelated((current) => {
-      const min = clampCount(value, current.ordersPerCustomer.min, 10);
+    const min = clampCount(value, settings.ordersPerCustomer.min, 10);
 
-      return {
-        ...current,
-        ordersPerCustomer: {
-          min,
-          max: Math.max(min, current.ordersPerCustomer.max),
-        },
-      };
+    updateSettings({
+      ordersPerCustomer: {
+        min,
+        max: Math.max(min, settings.ordersPerCustomer.max),
+      },
     });
   };
 
   const updateMaxOrders = (value: string) => {
-    setRelated((current) => {
-      const max = clampCount(value, current.ordersPerCustomer.max, 10);
+    const max = clampCount(value, settings.ordersPerCustomer.max, 10);
 
-      return {
-        ...current,
-        ordersPerCustomer: {
-          min: Math.min(max, current.ordersPerCustomer.min),
-          max,
-        },
-      };
+    updateSettings({
+      ordersPerCustomer: {
+        min: Math.min(max, settings.ordersPerCustomer.min),
+        max,
+      },
     });
   };
 
@@ -298,9 +310,9 @@ function App() {
             {[5, 10, 25, 50, 100].map((num) => (
               <button
                 key={num}
-                onClick={() => setCount(num)}
+                onClick={() => updateSettings({ productCount: num })}
                 className={`px-2 lg:px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  count === num
+                  settings.productCount === num
                     ? 'bg-indigo-600 text-white'
                     : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                 }`}
@@ -315,8 +327,10 @@ function App() {
                 min={1}
                 max={1000}
                 className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-                value={count}
-                onChange={(e) => setCount(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
+                value={settings.productCount}
+                onChange={(e) => updateSettings({
+                  productCount: Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)),
+                })}
               />
             </div>
           </div>
@@ -333,7 +347,7 @@ function App() {
               max={1000}
               aria-label="Customer count"
               className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-              value={related.customerCount}
+              value={settings.customerCount}
               onChange={(event) => updateCustomerCount(event.target.value)}
             />
 
@@ -349,7 +363,7 @@ function App() {
               max={10}
               aria-label="Minimum orders per customer"
               className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-              value={related.ordersPerCustomer.min}
+              value={settings.ordersPerCustomer.min}
               onChange={(event) => updateMinOrders(event.target.value)}
             />
             <span className="text-slate-600">–</span>
@@ -359,7 +373,7 @@ function App() {
               max={10}
               aria-label="Maximum orders per customer"
               className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-              value={related.ordersPerCustomer.max}
+              value={settings.ordersPerCustomer.max}
               onChange={(event) => updateMaxOrders(event.target.value)}
             />
 
@@ -375,9 +389,35 @@ function App() {
               max={1000}
               aria-label="Review count"
               className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-              value={related.reviewCount}
+              value={settings.reviewCount}
               onChange={(event) => updateReviewCount(event.target.value)}
             />
+          </div>
+
+          {/* Seed */}
+          <div className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg">
+            <label htmlFor="seed" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
+              Seed
+            </label>
+            <input
+              id="seed"
+              type="number"
+              min={0}
+              max={1_000_000_000}
+              aria-label="Random seed"
+              className="w-20 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
+              value={settings.seed}
+              onChange={(event) => updateSeed(event.target.value)}
+            />
+            <button
+              type="button"
+              onClick={randomizeSeed}
+              title="Randomize seed"
+              aria-label="Randomize seed"
+              className="p-1 text-slate-500 hover:text-indigo-400 transition-colors"
+            >
+              <Dices className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="h-6 lg:h-8 w-px bg-slate-800 hidden sm:block" />
@@ -404,7 +444,7 @@ function App() {
               ) : (
                 <Play className="w-3 h-3 fill-current" />
               )}
-              <span>Generate {count}</span>
+              <span>Generate {settings.productCount}</span>
             </button>
           </div>
         </div>
