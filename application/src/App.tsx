@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
+import { PresetBar } from './components/PresetBar';
 import { useStore } from './store/useStore';
 import { generateDataset } from './core/generate';
 import { generateProducts } from './core/generate/product';
@@ -7,6 +8,7 @@ import { toCsv } from './core/exporters/csv';
 import { toJson } from './core/exporters/json';
 import { datasetToSql, type SqlDialect } from './core/exporters/sql';
 import { SeededRng } from './core/rng';
+import { downloadText } from './lib/download';
 import type { Dataset } from './types/dataset';
 import {
   Play,
@@ -18,7 +20,6 @@ import {
   FileSpreadsheet,
   FileJson,
   FileCode2,
-  Dices,
 } from 'lucide-react';
 
 const DATASET_TABS = [
@@ -40,18 +41,6 @@ const clamp = (value: number, min: number, max: number) =>
 const clampCount = (value: string, fallback: number, max: number): number => {
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? fallback : clamp(parsed, 0, max);
-};
-
-const downloadText = (contents: string, filename: string, mimeType: string) => {
-  const blob = new Blob([contents], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 };
 
 function App() {
@@ -182,6 +171,11 @@ function App() {
     setActiveTab('products');
   };
 
+  const handlePresetApplied = () => {
+    setIsPreviewMode(true);
+    setActiveTab('products');
+  };
+
   const activeRows = dataset ? dataset[activeTab] : EMPTY_ROWS;
   const activeTabLabel =
     DATASET_TABS.find((tab) => tab.key === activeTab)?.label ?? 'Dataset';
@@ -228,16 +222,6 @@ function App() {
     updateSettings({
       reviewCount: clampCount(value, settings.reviewCount, 1000),
     });
-  };
-
-  const updateSeed = (value: string) => {
-    updateSettings({ seed: clampCount(value, settings.seed, 1_000_000_000) });
-  };
-
-  const randomizeSeed = () => {
-    const values = new Uint32Array(1);
-    crypto.getRandomValues(values);
-    updateSettings({ seed: values[0] % 1_000_000_000 });
   };
 
   const updateMinOrders = (value: string) => {
@@ -394,32 +378,6 @@ function App() {
             />
           </div>
 
-          {/* Seed */}
-          <div className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg">
-            <label htmlFor="seed" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
-              Seed
-            </label>
-            <input
-              id="seed"
-              type="number"
-              min={0}
-              max={1_000_000_000}
-              aria-label="Random seed"
-              className="w-20 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
-              value={settings.seed}
-              onChange={(event) => updateSeed(event.target.value)}
-            />
-            <button
-              type="button"
-              onClick={randomizeSeed}
-              title="Randomize seed"
-              aria-label="Randomize seed"
-              className="p-1 text-slate-500 hover:text-indigo-400 transition-colors"
-            >
-              <Dices className="w-4 h-4" />
-            </button>
-          </div>
-
           <div className="h-6 lg:h-8 w-px bg-slate-800 hidden sm:block" />
 
           {/* Actions */}
@@ -455,6 +413,8 @@ function App() {
         <EcommerceSidebar />
 
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <PresetBar onPresetApplied={handlePresetApplied} />
+
           {/* Editor/Preview Surface */}
           <div className="flex-1 p-6 bg-slate-950 overflow-hidden">
             <div className="h-full bg-slate-900 border border-slate-800 rounded-2xl flex flex-col shadow-2xl overflow-hidden">

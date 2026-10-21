@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
 import type { Dataset, GenerationSettings } from '../types/dataset';
+import type { PresetConfig } from '../core/presets';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
@@ -56,6 +57,9 @@ interface StoreState {
   // Generation settings
   settings: GenerationSettings;
   updateSettings: (updates: Partial<GenerationSettings>) => void;
+
+  // Presets
+  applyPreset: (preset: PresetConfig) => void;
 }
 
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
@@ -436,6 +440,21 @@ removeAttribute: (categoryId, attributeKey) => {
   updateSettings: (updates) =>
     set((state) => ({
       settings: { ...state.settings, ...updates },
+    })),
+
+  // Presets
+  applyPreset: (preset) =>
+    set((state) => ({
+      categories: state.categories.some((category) => category.id === preset.category.id)
+        ? state.categories.map((category) =>
+            category.id === preset.category.id ? preset.category : category,
+          )
+        : [...state.categories, preset.category],
+      selectedCategory: preset.category,
+      brands: preset.brands,
+      selectedBrands: preset.selectedBrands,
+      settings: preset.settings,
+      dataset: null,
     })),
     }),
     {
