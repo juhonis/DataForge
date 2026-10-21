@@ -7,9 +7,9 @@ import type {
   DimensionRange,
   IdFormat,
   Product,
-} from '../types/product';
-import { SeededRng, type Rng } from './rng';
-import { slugify } from './normalize';
+} from '../../types/product';
+import { SeededRng, type Rng } from '../rng';
+import { slugify } from '../normalize';
 
 let sequentialCounter = 0;
 
@@ -193,6 +193,7 @@ export const generateProduct = (
     id,
     brand: brand.name,
     name,
+    description: rng.productDescription(),
     slug: generateSlug(name, id),
     price,
     stock_quantity: rng.int(0, 100),
@@ -228,21 +229,4 @@ export const generateProducts = (
   }
 
   return products;
-};
-
-export const exportToJSON = (products: Product[]): string => {
-  return JSON.stringify(products, null, 2);
-};
-
-export const downloadJSON = (products: Product[], filename: string) => {
-  const json = exportToJSON(products);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename.endsWith('.json') ? filename : `${filename}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 };

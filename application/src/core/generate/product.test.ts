@@ -4,16 +4,16 @@ import type {
   Brand,
   CategoryTemplate,
   DimensionKey,
-} from '../types/product'
-import { CATEGORY_TEMPLATES } from './categories'
+} from '../../types/product'
+import { CATEGORY_TEMPLATES } from '../categories'
 import {
   generateId,
   generateProduct,
   generateProducts,
   generateSKU,
   generateSlug,
-} from './productGenerator'
-import { SeededRng } from './rng'
+} from './product'
+import { SeededRng } from '../rng'
 
 const DIMENSION_KEYS: DimensionKey[] = [
   'weight_kg',
@@ -173,6 +173,7 @@ describe('category presets', () => {
       for (const product of products) {
         expect(product.name.trim(), category.id).not.toBe('')
         expect(product.name, category.id).not.toMatch(/[{}]/)
+        expect(product.description.trim(), category.id).not.toBe('')
         expect(product.slug.trim(), category.id).not.toBe('')
         expect(product.sku.startsWith(`${category.skuPrefix}-`), category.id).toBe(true)
         expect(product.images, category.id).toHaveLength(1)

@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
 import { useStore } from './store/useStore';
-import { generateProducts, downloadJSON } from './core/productGenerator';
+import { generateProducts } from './core/generate/product';
 import { Play, Download, Copy, Database, Trash2, Package, Sparkles } from 'lucide-react';
+
+const downloadText = (contents: string, filename: string, mimeType: string) => {
+  const blob = new Blob([contents], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 
 function App() {
   const {
@@ -90,8 +102,8 @@ function App() {
 
   const handleDownload = () => {
     if (products.length === 0) return;
-    const filename = `${selectedCategory.slug}-products`;
-    downloadJSON(products, filename);
+    const filename = `${selectedCategory.slug}-products.json`;
+    downloadText(JSON.stringify(products, null, 2), filename, 'application/json');
   };
 
   const copyToClipboard = () => {
