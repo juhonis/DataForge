@@ -1,3 +1,5 @@
+import type { Product } from './product';
+
 export interface Customer {
   id: string;
   name: string;
@@ -36,4 +38,28 @@ export interface OrderLine {
 export interface CountRange {
   min: number;
   max: number;
+}
+
+export interface Review {
+  id: string;
+  product_id: string;
+  customer_id: string;
+  rating: number;
+  title: string;
+  body: string;
+  created_at: string;
+}
+
+export interface Dataset {
+  products: Product[];
+  customers: Customer[];
+  orders: Order[];
+  order_lines: OrderLine[];
+  reviews: Review[];
+}
+
+export interface RelatedDataConfig {
+  customerCount: number;
+  ordersPerCustomer: CountRange;
+  reviewCount: number;
 }
