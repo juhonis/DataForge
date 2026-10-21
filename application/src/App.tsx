@@ -55,7 +55,6 @@ function App() {
       // Clear any existing generated products when config changes
       if (!isPreviewMode && products.length > 0) {
         clearProducts();
-        setIsPreviewMode(true);
       }
       
       // Generate preview if we have selected brands
@@ -65,6 +64,7 @@ function App() {
         const timeoutId = setTimeout(() => {
           const data = generateProducts(selectedCategory, brands, selectedBrands, 1);
           setProducts(data);
+          setIsPreviewMode(true);
           setIsLoadingPreview(false);
         }, 150);
         
