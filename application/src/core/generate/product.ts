@@ -145,11 +145,13 @@ const generatePrice = (
     return brand.modelPrices[model];
   }
 
-  if (brand.priceRange) {
-    return rng.int(brand.priceRange.min, brand.priceRange.max);
-  }
+  const range = brand.priceRange ?? category.priceRange;
+  const decimalPlaces =
+    range.decimalPlaces ?? category.priceRange.decimalPlaces ?? 0;
 
-  return rng.int(category.priceRange.min, category.priceRange.max);
+  return decimalPlaces === 0
+    ? rng.int(range.min, range.max)
+    : rng.float(range.min, range.max, decimalPlaces);
 };
 
 const generateDimension = (

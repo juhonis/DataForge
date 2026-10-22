@@ -6,6 +6,7 @@ import type {
   OrderStatus,
 } from '../../types/dataset';
 import type { Product } from '../../types/product';
+import { roundMoney } from '../money';
 import type { Rng } from '../rng';
 
 const MAX_LINES_PER_ORDER = 4;
@@ -76,7 +77,7 @@ export const generateOrders = (
           product_id: product.id,
           quantity,
           unit_price: product.price,
-          line_total: quantity * product.price,
+          line_total: roundMoney(quantity * product.price),
         };
       });
 
@@ -85,7 +86,9 @@ export const generateOrders = (
         customer_id: customer.id,
         status: rng.weighted(ORDER_STATUS_WEIGHTS),
         placed_at: placedAt.toISOString(),
-        total: lines.reduce((sum, line) => sum + line.line_total, 0),
+        total: roundMoney(
+          lines.reduce((sum, line) => sum + line.line_total, 0),
+        ),
         currency: CURRENCY,
       });
       orderLines.push(...lines);

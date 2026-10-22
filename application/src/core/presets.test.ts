@@ -110,6 +110,34 @@ describe('preset serialization', () => {
     );
   });
 
+  it('preserves decimal price settings', () => {
+    const decimalCategory = {
+      ...preset.category,
+      priceRange: { min: 9.99, max: 99.99, decimalPlaces: 2 },
+    };
+    const parsed = parsePreset(presetJson({ category: decimalCategory }));
+
+    expect(parsed.category.priceRange).toEqual({
+      min: 9.99,
+      max: 99.99,
+      decimalPlaces: 2,
+    });
+  });
+
+  it.each([3, -1, 1.5])(
+    'rejects a decimalPlaces value of %s',
+    (decimalPlaces) => {
+      const invalidCategory = {
+        ...preset.category,
+        priceRange: { ...preset.category.priceRange, decimalPlaces },
+      };
+
+      expect(() =>
+        parsePreset(presetJson({ category: invalidCategory })),
+      ).toThrow('Preset category is invalid.');
+    },
+  );
+
   it('rejects invalid brands', () => {
     expect(() => parsePreset(presetJson({ brands: 'nope' }))).toThrow(
       'Preset brands are invalid.',

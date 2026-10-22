@@ -19,6 +19,7 @@ export interface Product {
 export interface PriceRange {
   min: number;
   max: number;
+  decimalPlaces?: 0 | 1 | 2;
 }
 
 export type IdFormat = 'uuid' | 'sequential' | 'custom';

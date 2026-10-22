@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Brand, CategoryTemplate } from '../../types/product'
 import { CATEGORY_TEMPLATES } from '../categories'
+import { roundMoney } from '../money'
 import { SeededRng } from '../rng'
 import { generateCustomers } from './customer'
 import { generateOrders } from './order'
@@ -55,6 +56,9 @@ const createOrders = (seed: number, ordersPerCustomer = { min: 1, max: 3 }) => {
   return { customers, products, ...result }
 }
 
+const isWholeCents = (value: number): boolean =>
+  Math.abs(value * 100 - Math.round(value * 100)) < 1e-9
+
 describe('generateOrders', () => {
   it('creates orders for every customer within the configured range', () => {
     const { customers, orders } = createOrders(5, { min: 2, max: 3 })
@@ -92,7 +96,9 @@ describe('generateOrders', () => {
     const productsById = new Map(products.map((product) => [product.id, product]))
 
     for (const line of orderLines) {
-      expect(line.line_total).toBe(line.quantity * line.unit_price)
+      expect(line.line_total).toBe(
+        roundMoney(line.quantity * line.unit_price),
+      )
       expect(line.unit_price).toBe(productsById.get(line.product_id)?.price)
       expect(line.quantity).toBeGreaterThanOrEqual(1)
       expect(line.quantity).toBeLessThanOrEqual(3)
@@ -105,10 +111,55 @@ describe('generateOrders', () => {
       expect(lines.length).toBeLessThanOrEqual(4)
       expect(new Set(lines.map((line) => line.product_id)).size).toBe(lines.length)
       expect(order.total).toBe(
-        lines.reduce((sum, line) => sum + line.line_total, 0),
+        roundMoney(lines.reduce((sum, line) => sum + line.line_total, 0)),
       )
       expect(order.currency).toBe('USD')
       expect(ORDER_STATUSES).toContain(order.status)
+    }
+  })
+
+  it('rounds decimal-priced lines and totals to cents', () => {
+    const category = CATEGORY_TEMPLATES.find(
+      (candidate) => candidate.id === 'audio',
+    )
+
+    if (!category) throw new Error('Audio category is missing')
+
+    const brands = makeBrands(category)
+    const products = generateProducts(
+      category,
+      brands,
+      brands.map((brand) => brand.id),
+      12,
+      new SeededRng(13),
+    )
+    const customers = generateCustomers(20, new SeededRng(14), NOW)
+    const { orders, orderLines } = generateOrders(
+      customers,
+      products,
+      { min: 1, max: 3 },
+      new SeededRng(15),
+      NOW,
+    )
+
+    expect(
+      orderLines.some((line) => !Number.isInteger(line.unit_price)),
+    ).toBe(true)
+
+    for (const line of orderLines) {
+      expect(isWholeCents(line.line_total)).toBe(true)
+      expect(line.line_total).toBe(
+        roundMoney(line.quantity * line.unit_price),
+      )
+    }
+
+    for (const order of orders) {
+      const lines = orderLines.filter((line) => line.order_id === order.id)
+
+      expect(isWholeCents(order.total)).toBe(true)
+      expect(order.total).toBe(
+        roundMoney(lines.reduce((sum, line) => sum + line.line_total, 0)),
+      )
     }
   })
 

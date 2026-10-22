@@ -92,6 +92,13 @@ const isRecordOfPositiveNumbers = (
 const isPriceRange = (value: unknown): value is PriceRange => {
   if (!isRecord(value)) return false;
 
+  if (
+    value.decimalPlaces !== undefined &&
+    !isIntegerBetween(value.decimalPlaces, 0, 2)
+  ) {
+    return false;
+  }
+
   return (
     isFiniteNumber(value.min) &&
     isFiniteNumber(value.max) &&

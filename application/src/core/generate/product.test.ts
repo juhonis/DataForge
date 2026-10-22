@@ -147,6 +147,75 @@ describe('price precedence', () => {
   })
 })
 
+describe('decimal pricing', () => {
+  const isWholeCents = (value: number): boolean =>
+    Math.abs(value * 100 - Math.round(value * 100)) < 1e-9
+  const category = makeCategory({
+    priceRange: { min: 10, max: 20, decimalPlaces: 2 },
+  })
+
+  it('generates prices with cent precision inside the configured range', () => {
+    const brand = makeBrand()
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      100,
+      new SeededRng(21),
+    )
+
+    for (const product of products) {
+      expect(product.price).toBeGreaterThanOrEqual(10)
+      expect(product.price).toBeLessThanOrEqual(20)
+      expect(isWholeCents(product.price)).toBe(true)
+    }
+
+    expect(products.some((product) => !Number.isInteger(product.price))).toBe(
+      true,
+    )
+  })
+
+  it('inherits category decimals for brand ranges', () => {
+    const brand = makeBrand({ priceRange: { min: 10, max: 20 } })
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      50,
+      new SeededRng(22),
+    )
+
+    expect(products.some((product) => !Number.isInteger(product.price))).toBe(
+      true,
+    )
+  })
+
+  it('keeps exact model prices unchanged', () => {
+    const brand = makeBrand({ modelPrices: { 'Test Model': 19.99 } })
+
+    expect(generateProduct(category, brand, new SeededRng(23)).price).toBe(
+      19.99,
+    )
+  })
+
+  it('honors an explicit integer brand range', () => {
+    const brand = makeBrand({
+      priceRange: { min: 10, max: 20, decimalPlaces: 0 },
+    })
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      50,
+      new SeededRng(24),
+    )
+
+    for (const product of products) {
+      expect(Number.isInteger(product.price)).toBe(true)
+    }
+  })
+})
+
 describe('generation constraints', () => {
   it('creates 10,000 products with unique ids, skus, and slugs', () => {
     const category = CATEGORY_TEMPLATES[0]

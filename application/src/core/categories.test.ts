@@ -73,6 +73,24 @@ describe('category templates', () => {
     }
   })
 
+  it('opts only the retail-style categories into decimal prices', () => {
+    const decimalCategories = new Set([
+      'audio',
+      'accessories',
+      'books',
+      'clothing',
+    ])
+
+    for (const category of CATEGORY_TEMPLATES) {
+      const expected = decimalCategories.has(category.id) ? 2 : 0
+
+      expect(
+        category.priceRange.decimalPlaces ?? 0,
+        category.id,
+      ).toBe(expected)
+    }
+  })
+
   it('keeps variant lists only where variants are used in names', () => {
     for (const category of CATEGORY_TEMPLATES) {
       if (category.usesVariantInName) {

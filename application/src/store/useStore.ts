@@ -396,7 +396,7 @@ removeAttribute: (categoryId, attributeKey) => {
     set((state) => {
       const updatePriceRange = (c: CategoryTemplate) =>
         c.id === categoryId
-          ? { ...c, priceRange: { min, max } }
+          ? { ...c, priceRange: { ...c.priceRange, min, max } }
           : c;
       return {
         categories: state.categories.map(updatePriceRange),
@@ -409,7 +409,10 @@ removeAttribute: (categoryId, attributeKey) => {
     set((state) => ({
       brands: state.brands.map(b =>
         b.id === brandId
-          ? { ...b, priceRange: { min, max } }
+          ? {
+              ...b,
+              priceRange: { ...(b.priceRange ?? {}), min, max },
+            }
           : b
       ),
     }));
