@@ -1,6 +1,7 @@
-# DataForge — v1 Completion Plan
+# DataForge — Completion & v1.1 Plan
 
-Status: **proposed**, awaiting review
+Status: **Phases 0–5 complete and merged** (`7fed973`).
+Phases 6–9 proposed 2026-10-22.
 Baseline: `ff411ca` — "Fix: updating atribute key names" (2026-03-06)
 Scope: full audit of `application/src`, CI, and repository hygiene
 
@@ -16,7 +17,7 @@ and the repository has no mechanism that could have caught it.
 This plan turns the project into something worth putting on a portfolio
 without turning it into a framework.
 
-### Current state, measured
+### Original state (baseline, pre-v1), measured
 
 | Metric | Value |
 | --- | --- |
@@ -50,11 +51,10 @@ cleanup, it is the thing that makes phases 1–6 verifiable.
 
 ## 2. Delivery model
 
-One branch: **`feat/finish-v1`**, branched from `main`.
-
-Seven commits, each independently reviewable and revertable. No commit
-leaves the app in a non-building state, so `main` stays deployable to GitHub
-Pages throughout.
+The original v1 delivery used one branch, **`feat/finish-v1`**, branched
+from `main`. Seven commits, each independently reviewable and revertable. No
+commit leaves the app in a non-building state, so `main` stays deployable to
+GitHub Pages throughout.
 
 ```
 main ──────────────────────────────────────────────────►  (untouched, still deployable)
@@ -70,7 +70,23 @@ main ─────────────────────────
 ```
 
 Phases 2 and 3 are pure-logic and testable with no UI changes, so they can
-be reviewed and merged on their own merits before the UI churn in phase 6.
+be reviewed and merged on their own merits before the UI churn in phases
+6–8.
+
+The post-v1 extension uses short-lived branches, merged in order. Each branch
+must leave `main` deployable and pass the full gate set:
+
+```
+main
+  └── feat/visual-system       semantic theme + square geometry
+        └── feat/workspace-layout    resizable pane + tabbed configuration
+              └── feat/output-schema  editable output field names
+                    └── docs/portfolio  README, examples, architecture
+```
+
+If the dark graphite theme is selected after reviewing the light theme, it
+ships as a separate follow-up commit on top of `feat/visual-system` rather
+than delaying the core redesign.
 
 ---
 
@@ -443,29 +459,265 @@ Approximate target:
 
 ---
 
-### Phase 6 — `docs/portfolio`
+### Phase 6 — `feat/visual-system`
+
+**Goal: replace ad-hoc slate/indigo styling with a semantic, flat, 0-radius
+visual system. No behaviour changes.**
+
+#### 6A — Light neutral (default)
+
+Ship a light neutral theme first. It is easier to verify contrast in, reads
+well in screenshots, and avoids the current "developer side project" look.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `canvas` | `#F6F7F9` | App background |
+| `surface` | `#FFFFFF` | Panels, cards, inputs |
+| `surface-muted` | `#EEF1F4` | Inset areas, selected rows |
+| `border` | `#DCE1E7` | Dividers and control outlines |
+| `text` | `#141A22` | Primary text |
+| `muted` | `#5F6B7A` | Secondary text and labels |
+| `accent` | `#1D4ED8` | Primary actions, selection, focus |
+| `accent-muted` | `#E8EEFC` | Selected backgrounds |
+| `success` | `#067647` | Success states |
+| `warning` | `#B54708` | Preview/warning states |
+| `danger` | `#B42318` | Destructive actions and errors |
+
+Typography: system sans for the interface; monospace only for generated data.
+Use small uppercase/tracking labels sparingly. Remove decorative gradients,
+glows, and coloured shadows. Hierarchy should come from borders, spacing, and
+surface contrast.
+
+#### 6B — Dark graphite (optional, after light review)
+
+Define the same semantic token names under a `[data-theme='dark']` scope:
+
+| Token | Value |
+| --- | --- |
+| `canvas` | `#0B0F14` |
+| `surface` | `#121820` |
+| `surface-muted` | `#18212C` |
+| `border` | `#25303D` |
+| `text` | `#E7EDF5` |
+| `muted` | `#98A6B8` |
+| `accent` | `#5B9DFF` |
+| `accent-muted` | `#142642` |
+| `success` | `#3CCB7F` |
+| `warning` | `#F0B35A` |
+| `danger` | `#F97066` |
+
+Only add a visible theme toggle and persisted preference if the light theme is
+reviewed and dark graphite is selected. Do not implement two full visual QA
+passes in the initial redesign.
+
+#### Token architecture
+
+- Define semantic Tailwind v4 tokens in `index.css` (`--color-canvas`,
+  `--color-surface`, `--color-border`, `--color-text`, `--color-accent`, ...).
+- Expose them through `@theme inline` aliases backed by plain CSS variables,
+  so a `[data-theme='dark']` block can override values at runtime.
+- Replace raw `slate-*`, `indigo-*`, `emerald-*`, `amber-*`, and `red-*`
+  utilities in components with semantic classes.
+- Keep status colours semantic rather than palette-specific, so the dark theme
+  can override them without touching component code.
+
+#### Strict square geometry
+
+- Set the non-`full` radius scale (`sm`, `md`, `lg`, `xl`, `2xl`) to `0px`.
+- Use square corners for panels, cards, buttons, inputs, selects, badges, and
+  the output shell.
+- Keep the `full` radius token available only for functional circles: status
+  dots and the loading spinner.
+- Replace the pill-shaped Generate button with a rectangular action.
+- Remove card/panel shadows. Use 1px borders and surface contrast instead.
+- Make scrollbars and selection styling theme-aware and square.
+
+#### Implementation pass
+
+1. Add theme tokens and shared focus styles.
+2. Restyle `components/ui/` primitives; their API should not change.
+3. Restyle sidebar, output, preset bar, and app shell to use tokens.
+4. Remove unused `json-*` styles unless the output preview starts using them.
+5. Verify contrast and focus visibility for every interactive state.
+
+**Exit criteria:** no decorative radius/shadow utilities remain, component
+JSX uses semantic colour tokens, light theme passes a desktop/mobile manual
+review, and all existing tests still pass.
+
+---
+
+### Phase 7 — `feat/workspace-layout`
+
+**Goal: replace the header-heavy layout with a focused, resizable workspace.**
+
+#### Shell
+
+- Keep a slim header with app identity and the selected category. On mobile it
+  also carries the configuration drawer trigger.
+- Move product count, seed, customers, orders per customer, and reviews out of
+  the header and into the configuration pane.
+- Move the primary Generate and Clear actions into a sticky configuration
+  footer, always visible while scrolling configuration tabs.
+- Keep preset load/import/export as a compact bar at the top of the
+  configuration pane, not in the header.
+- Keep output status, dataset tabs, and export actions in the output pane.
+
+#### Configuration tabs
+
+- `Catalog`: category picker, category pricing, brands/models, attributes.
+- `Generation`: product count presets and custom value, seed/randomise,
+  customers, orders per customer, and reviews.
+- Presets remain a compact row above the tabs; seed moves to `Generation`.
+
+#### Resizable split
+
+Use a custom two-pane component rather than introducing a dependency for one
+split:
+
+- Default config width ~420px.
+- Drag handle between configuration and output.
+- Clamp to ~340px minimum and ~640px or 55% of workspace maximum.
+- Double-click the handle to reset.
+- Keyboard support on an accessible separator (`role="separator"`,
+  `aria-orientation="vertical"`, arrow/Home/End handling).
+- Persist width in localStorage under a UI-only key; never include it in
+  presets or configuration state.
+- Below `lg`, disable resizing and reuse the existing overlay drawer.
+
+#### Responsive behaviour
+
+- Desktop: docked configuration pane + output pane.
+- Tablet/mobile: output fills the width; configuration opens as a drawer with
+  backdrop, Escape-to-close, and visible close control.
+- Keep the Generate footer reachable in the drawer without scrolling to the
+  bottom of the form.
+
+**Exit criteria:** desktop drag and keyboard resizing work and persist across
+refreshes; mobile drawer remains usable; every generation setting is reachable
+from the configuration pane; header contains no generation controls.
+
+---
+
+### Phase 8 — `feat/output-schema`
+
+**Goal: let users rename output fields without editing generated values or
+breaking relational integrity.**
+
+#### Scope
+
+- Rename top-level fields for all five tables: `products`, `customers`,
+  `orders`, `order_lines`, `reviews`.
+- Apply names consistently to preview, clipboard copy, JSON, CSV, and SQL.
+- Keep dataset table names unchanged.
+- Keep the `attributes` container and its keys unchanged; attribute keys are
+  already editable in the `Attributes` section. CSV keeps the `attr_` prefix.
+- Do not make generated values editable in this phase.
+
+#### Mapping model
+
+Add a pure output-schema layer under `src/core/`:
+
+```ts
+type DatasetTable = keyof Dataset;
+type FieldMapping = Partial<Record<DatasetTable, Record<string, string>>>;
+```
+
+- Default mapping is identity, so existing output is byte-identical.
+- Store only overrides; fields without an override use their canonical name.
+- Provide static canonical field metadata so fields can be renamed even before
+  a table contains rows.
+- Mapping is applied at serialisation time only. Changing a name must not
+  regenerate, clear, or mutate the generated dataset.
+- CSV flattening happens after top-level mapping; validate that mapped names
+  do not collide with flattened `attr_*` columns.
+- SQL keeps canonical table names but uses mapped column identifiers.
+
+#### Validation
+
+- Non-empty names.
+- Identifier-safe names: `^[A-Za-z_][A-Za-z0-9_]*$`.
+- Case-insensitive uniqueness within a table.
+- No collision with flattened attribute columns.
+- Surface validation errors in the Fields UI and reject invalid mappings in
+  preset parsing.
+
+#### Fields inspector
+
+- Add a `Data | Fields` control to the output toolbar.
+- Fields view targets the currently selected table.
+- Show canonical name → editable output name, with per-field reset.
+- Provide reset-table and reset-all actions.
+- On wide screens, dock the inspector beside the preview; on smaller screens,
+  replace the preview while editing.
+- Preview remains read-only JSON and updates immediately when mappings change.
+
+#### Naming actions
+
+Add a per-table action that writes explicit mappings for the current fields:
+
+- Canonical
+- `snake_case`
+- `camelCase`
+- `PascalCase`
+
+Manual field overrides remain editable. Use unit-tested case-conversion rules
+so names such as `weight_kg`, `created_at`, `id`, and `sku` behave predictably.
+Multi-word attribute keys are excluded from these bulk actions.
+
+#### Persistence and preset compatibility
+
+- Add output mapping to the store and UI-only selectors.
+- Include mapping in exported presets.
+- Bump preset format to version 2 and store persistence to version 2.
+- Accept version 1 presets and persisted state, upgrading them with an
+  identity mapping.
+- Round-trip mappings through preset export/import.
+
+#### Tests
+
+- identity mapping leaves JSON, CSV, SQL, and clipboard output unchanged
+- top-level renames affect every output format
+- CSV attribute columns remain stable in both mapping and export
+- invalid, blank, duplicate, and collision-causing names are rejected
+- snake/camel/Pascal conversion edge cases
+- preset v1 import and v2 round-trip; store migration
+
+**Exit criteria:** a user can rename `weight_kg` to `w_kg`, see it in the
+preview, and download JSON/CSV/SQL with `w_kg`; invalid names cannot be
+exported; old presets still load.
+
+---
+
+### Phase 9 — `docs/portfolio`
 
 Highest leverage per line written, and currently the weakest area.
 
 1. **Rewrite `README.md`.** Must cover: what it is, **live demo link**
-   (GitHub Pages is already configured), screenshot, feature list, quickstart
-   for both npm and Docker, how the data model and schema templates work,
-   and the output formats. Every current claim must be true — in particular
-   the CSV promise gets satisfied or removed.
+   (GitHub Pages is already configured), final screenshot(s), feature list
+   including field-name mapping and theme support, quickstart for both npm and
+   Docker, how the data model and schema templates work, and the output
+   formats. Every current claim must be true — in particular the CSV promise
+   gets satisfied or removed.
 2. **Un-ignore `/examples`** and commit the four sample outputs (they exist
    locally, just untracked). Trim to ~10–20 rows each so the repo stays light.
+   Regenerate them from the final exporters.
 3. **`index.html`** — real `<title>`, meta description, OG tags, replace
    `vite.svg` with an inline SVG mark.
 4. **Rewrite `docs/architecture.md`** — actual folder tree, the
-   `core` / `store` / `components/ui` layering, and a data-flow diagram.
+   `core` / `store` / `components/ui` layering, the output-schema transform
+   (`canonical Dataset → field mapping → preview/export`), and a data-flow
+   diagram.
 5. **Decide `application/README.md`** — delete, or reduce to a pointer to the
    root README.
+6. **Manual claim audit** — every feature shown in the README must be
+   reachable in the running app, including responsive config, field renaming,
+   and export behavior.
 
 ---
 
 ## 5. Decisions
 
-All five resolved on 2026-10-17.
+D1–D5 resolved on 2026-10-17. D6–D10 resolved on 2026-10-22.
 
 | # | Decision | Resolution |
 | --- | --- | --- |
@@ -474,6 +726,11 @@ All five resolved on 2026-10-17.
 | **D3** | Relational scope | **Include `reviews`** (product_id + customer_id + rating), on top of customers / orders / order lines. ~60 extra lines; makes the demo dataset feel real. *Note: this was the one soft recommendation of the five — reviews are a self-contained generator module and trivially droppable if you disagree.* |
 | **D4** | Preset format | **Single whole-config `*.dataforge.json`** — simplest thing that works, and one file is easier to share than a category/run-settings split. |
 | **D5** | `description` field | **Add** `faker.commerce.productDescription()` to products. Permanent schema change; makes placeholder data far more usable. |
+| **D6** | Visual theme | **Light neutral first.** Ship semantic tokens and a light "Studio Neutral" theme. Define dark "Graphite" tokens in the plan; enable a toggle only after the light theme is reviewed and dark is selected. |
+| **D7** | Geometry | **Strict 0px radius** for all UI surfaces and controls. Circular geometry is limited to functional status dots and the loading spinner. No decorative shadows or gradients. |
+| **D8** | Workspace layout | **Docked resizable split pane**, not floating windows. Configuration gets `Catalog` and `Generation` tabs, a compact preset bar, and a sticky Generate/Clear footer. Header becomes identity/context only. |
+| **D9** | Output schema | **Serialization-only field renames** for top-level fields in all five tables. Preview, clipboard, JSON, CSV, and SQL all honor the mapping. Table names, the `attributes` container, and generated values are unchanged. |
+| **D10** | Preset/storage v2 | **Bump to version 2** with output mapping included. Version 1 presets and persisted state remain valid and migrate to an identity mapping. |
 
 ---
 
@@ -483,36 +740,41 @@ All five resolved on 2026-10-17.
 DataForge/
 ├── .github/workflows/deploy.yml   lint → typecheck → test → build → deploy
 ├── docs/
-│   ├── architecture.md            rewritten in phase 6
+│   ├── architecture.md            rewritten in phase 9
 │   └── plan.md                    this file
-├── examples/                      un-ignored in phase 6
+├── examples/                      un-ignored in phase 9
 ├── application/
 │   ├── eslint.config.js           scoped to ts/tsx in phase 0
 │   ├── vitest.config.ts           new, phase 0
 │   └── src/
+│       ├── index.css              semantic theme tokens + theme overrides
 │       ├── core/                  pure, zero React, fully tested
-│       │   ├── rng.ts             NEW  seeded PRNG
-│       │   ├── normalize.ts       NEW  slugify / key / prefix / validation
+│       │   ├── rng.ts             seeded PRNG
+│       │   ├── normalize.ts       slugify / key / prefix / validation
 │       │   ├── categories.ts      declarative presets
+│       │   ├── outputSchema.ts    NEW  canonical fields + mapping transforms
 │       │   ├── generate/
-│       │   │   ├── product.ts     rewritten from productGenerator.ts
-│       │   │   ├── customer.ts    NEW
-│       │   │   ├── order.ts       NEW
-│       │   │   └── review.ts      NEW
+│       │   │   ├── product.ts
+│       │   │   ├── customer.ts
+│       │   │   ├── order.ts
+│       │   │   └── review.ts
 │       │   └── exporters/
-│       │       ├── json.ts
-│       │       ├── csv.ts         NEW
-│       │       └── sql.ts         NEW
+│       │       ├── json.ts        + optional field mapping
+│       │       ├── csv.ts         + mapping-aware flattening
+│       │       └── sql.ts         + mapped column identifiers
 │       ├── types/
 │       ├── store/
-│       │   ├── useStore.ts        + persist, + dedupe guards
-│       │   └── selectors.ts       NEW  granular subscriptions
+│       │   └── useStore.ts        + persist v2 + output mapping
 │       └── components/
-│           ├── ui/                NEW  9 primitives
-│           ├── sidebar/           NEW  ~9 components
-│           ├── OutputPanel.tsx    + dataset tabs + export menu
-│           └── PresetBar.tsx      NEW  seed + presets
-└── README.md                      rewritten in phase 6
+│           ├── ui/                shared primitives + semantic styling
+│           ├── sidebar/           category, brand, model, attribute sections
+│           ├── workspace/
+│           │   └── ResizableSplit.tsx  NEW  split pane + keyboard resizing
+│           ├── output/
+│           │   ├── OutputPanel.tsx     moved from components/
+│           │   └── FieldMappingPanel.tsx  NEW
+│           └── PresetBar.tsx      compact preset bar
+└── README.md                      rewritten in phase 9
 ```
 
 ---
@@ -521,11 +783,17 @@ DataForge/
 
 | Risk | Mitigation |
 | --- | --- |
-| Phase 6 (UI) is the least testable — no component tests | Land phases 1–3 first and review on their own merits. Add one `jsdom` smoke test for `App` if phase 6 turns out to regress anything silently. |
+| Phases 6–8 are UI-heavy and have no component test harness | Keep mapping and resizer math in pure modules with unit tests; use a manual desktop/mobile keyboard checklist for visual and layout work. Add `jsdom` only if the redesign proves too regression-prone without it. |
+| Theme migration touches every component and can leave a mix of raw and semantic colours | Do the token pass first, then replace utilities mechanically. Exit criteria require raw palette classes to be gone from component JSX. |
+| Supporting two themes doubles visual QA | Ship light neutral first. Define dark graphite tokens in the plan, but only add the toggle after an explicit review decision. |
+| Resizable split can break mobile or keyboard use | One dedicated `ResizableSplit` component, pure clamp tests, accessible separator keys, and a mobile drawer path that never mounts the split. |
+| Field mapping can diverge between JSON, CSV, SQL, and clipboard | Apply one pure mapping transform before every serializer; test all formats from the same mapping and keep identity output byte-identical. |
+| Mapped names can collide or produce invalid SQL/CSV | Validate identifier shape and per-table uniqueness in core, and reject invalid mappings during preset import. |
+| Preset/storage v2 can break existing saved configurations | Versioned migrations with explicit v1 fixture tests; v1 presets load with an identity mapping. |
+| Case conversion can mangle names such as `id`, `sku`, `created_at`, or `weight_kg` | Unit-test conversion rules and keep manual per-field overrides authoritative. |
 | Category presets become unwieldy once `nameTemplate` + `DimensionProfile` + attributes + weights are all inline | Split each preset into its own module under `core/categories/` from the start, rather than one growing array. |
 | `faker.seed()` mutates module-global state, so parallel tests could interfere | Create the RNG instance explicitly and pass it down; never call `faker.seed()` at module scope. Configure `sequence.concurrent: false` in `vitest.config.ts`. |
 | Decimal prices could break a downstream consumer expecting integers | Opt-in per category (`decimalPlaces: 0` default) — existing presets are unchanged. |
-| Phase 5 touches ~900 lines of JSX with no test net | Commit it separately, and review it as pure refactoring with the bugs in §3.1–§3.3 as the checklist. |
 | Scope creep toward a framework | Explicit non-goals below. |
 
 ### Non-goals
@@ -533,6 +801,10 @@ DataForge/
 Deliberately **out of scope** to keep this a simple, finishable project:
 
 - A visual node/canvas schema editor (the declarative preset *is* the schema)
+- Renaming dataset table names or rewriting foreign-key relationships
+- Editing generated row values or maintaining per-row overrides
+- A spreadsheet/table preview; the preview stays read-only JSON
+- Free-floating, freely draggable application windows
 - A backend, database, or user accounts — this stays a static client-side app
 - i18n / locale switching
 - Importing real data to anonymise or transform it
@@ -549,7 +821,14 @@ Deliberately **out of scope** to keep this a simple, finishable project:
 - [ ] Every referential FK in generated data resolves — asserted by tests
 - [ ] CSV, JSON, and SQL export all round-trip, tested
 - [ ] Same seed + same config → byte-identical output, tested
-- [ ] Refresh the page; configuration survives
+- [ ] Refresh the page; configuration and output field mapping survive
+- [ ] UI uses semantic theme tokens and strict 0px radius; no decorative gradients or shadows
+- [ ] Light neutral theme is reviewed; the dark graphite decision is recorded
+- [ ] Config pane resizes by pointer and keyboard, clamps correctly, and persists across refresh
+- [ ] Generation settings and actions live in the config pane; mobile drawer remains fully usable
+- [ ] Renaming a field updates preview, clipboard, JSON, CSV, and SQL without regenerating data
+- [ ] Invalid or duplicate field names are blocked; bulk `snake_case` / `camelCase` / `PascalCase` actions work
+- [ ] Preset format v2 round-trips; v1 presets and persisted state migrate safely
 - [ ] Keyboard-only: every control reachable and operable; no `<span onClick>`
 - [ ] Every README claim is verifiable in the running app
 - [ ] Live demo link and screenshot in the README
