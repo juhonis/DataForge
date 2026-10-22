@@ -41,6 +41,12 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Google': ['Pixel 8', 'Pixel 8 Pro', 'Pixel 8a', 'Pixel Fold', 'Pixel Tablet'],
       'OnePlus': ['OnePlus 12', 'OnePlus 12R', 'OnePlus Open', 'OnePlus Nord', 'OnePlus 11'],
     },
+    brandWeights: {
+      'Apple': 4,
+      'Samsung': 3,
+      'Google': 1.5,
+      'OnePlus': 1,
+    },
     nameTemplate: '{brand} {model}',
     usesVariantInName: false,
     dimensions: {
@@ -50,6 +56,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
     priceRange: { min: 299, max: 1599 },
+    imageCountRange: { min: 1, max: 3 },
+    stockRange: { min: 5, max: 250 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -84,6 +92,13 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Lenovo': ['ThinkPad X1', 'ThinkPad T', 'Yoga', 'Legion', 'IdeaPad'],
       'Asus': ['ZenBook', 'VivoBook', 'ROG', 'TUF', 'ProArt'],
     },
+    brandWeights: {
+      'Apple': 4,
+      'Dell': 2.5,
+      'HP': 1.5,
+      'Lenovo': 1.5,
+      'Asus': 1,
+    },
     nameTemplate: '{brand} {model} {screenSize}',
     usesVariantInName: false,
     dimensions: {
@@ -93,6 +108,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 1, max: 2 },
     },
     priceRange: { min: 599, max: 3999 },
+    imageCountRange: { min: 1, max: 4 },
+    stockRange: { min: 2, max: 80 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -131,6 +148,12 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'JBL': ['Tune', 'Live', 'Quantum', 'Flip', 'Charge'],
       'Sennheiser': ['Momentum 4', 'Momentum True Wireless', 'HD 660S', 'IE 900', 'Ambeo'],
     },
+    brandWeights: {
+      'Sony': 3,
+      'Bose': 2,
+      'JBL': 1.5,
+      'Sennheiser': 1,
+    },
     variants: ['Buds', 'Headphones'],
     nameTemplate: '{brand} {model} {variant}',
     usesVariantInName: true,
@@ -140,7 +163,9 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       width_cm: { min: 7, max: 8 },
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
-    priceRange: { min: 49, max: 499 },
+    priceRange: { min: 49, max: 499, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 4 },
+    stockRange: { min: 10, max: 300 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -172,6 +197,11 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Belkin': ['BoostCharge', 'Connect', 'MagSafe', 'Thunderbolt', 'WeMo'],
       'Logi': ['MX Keys', 'MX Master', 'StreamCam', 'K380', 'C920'],
     },
+    brandWeights: {
+      'Anker': 3,
+      'Belkin': 1.5,
+      'Logi': 2,
+    },
     nameTemplate: '{brand} {model} {deviceType}',
     nameParts: { deviceType: ['Cable', 'Hub', 'Adapter'] },
     usesVariantInName: false,
@@ -181,7 +211,9 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       width_cm: { min: 7, max: 8 },
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
-    priceRange: { min: 9, max: 299 },
+    priceRange: { min: 9, max: 299, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 3 },
+    stockRange: { min: 20, max: 500 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -213,6 +245,12 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'Simon & Schuster': ['Scribner', 'Atria', 'Gallery', 'Touchstone', 'Free Press'],
       'Random House': ['Knopf', 'Doubleday', 'Crown', 'Ballantine', 'Del Rey'],
     },
+    brandWeights: {
+      'Penguin': 2,
+      'HarperCollins': 1.5,
+      'Simon & Schuster': 1,
+      'Random House': 1.5,
+    },
     nameTemplate: '{brand} {model}',
     usesVariantInName: false,
     dimensions: {
@@ -221,7 +259,9 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       width_cm: { min: 11, max: 16 },
       height_cm: { min: 1, max: 5 },
     },
-    priceRange: { min: 9, max: 99 },
+    priceRange: { min: 9, max: 99, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 2 },
+    stockRange: { min: 10, max: 400 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -260,6 +300,13 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       'H&M': ['Conscious', 'Trend', 'Divided', 'Kids', 'Premium'],
       'Uniqlo': ['Heattech', 'Aerism', 'Ultra Light Down', 'Kando', 'U'],
     },
+    brandWeights: {
+      'Nike': 3,
+      'Adidas': 2.5,
+      'Zara': 1.5,
+      'H&M': 1.5,
+      'Uniqlo': 1,
+    },
     nameTemplate: '{brand} {model}',
     usesVariantInName: false,
     dimensions: {
@@ -268,7 +315,9 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       width_cm: { min: 15, max: 25 },
       height_cm: { min: 1, max: 8 },
     },
-    priceRange: { min: 19, max: 599 },
+    priceRange: { min: 19, max: 599, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 2 },
+    stockRange: { min: 5, max: 350 },
     idFormat: 'uuid',
     attributes: [
       {

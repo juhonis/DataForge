@@ -17,6 +17,7 @@ const brands: Brand[] = [
   {
     id: 'brand-apple',
     name: 'Apple',
+    weight: 2.5,
     models: ['iPhone 15', 'iPhone 15 Pro'],
     selectedModels: ['iPhone 15'],
     priceRange: { min: 499, max: 1299 },
@@ -25,6 +26,7 @@ const brands: Brand[] = [
   {
     id: 'brand-google',
     name: 'Google',
+    weight: 1,
     models: ['Pixel 8'],
     selectedModels: ['Pixel 8'],
     modelPrices: {},
@@ -74,6 +76,7 @@ describe('preset serialization', () => {
 
     expect(apple?.models).toEqual(['iPhone 15', 'iPhone 15 Pro']);
     expect(apple?.selectedModels).toEqual(['iPhone 15']);
+    expect(apple?.weight).toBe(2.5);
     expect(apple?.priceRange).toEqual({ min: 499, max: 1299 });
     expect(apple?.modelPrices).toEqual({ 'iPhone 15': 799 });
   });
@@ -107,9 +110,80 @@ describe('preset serialization', () => {
     );
   });
 
+  it('preserves decimal price settings', () => {
+    const decimalCategory = {
+      ...preset.category,
+      priceRange: { min: 9.99, max: 99.99, decimalPlaces: 2 },
+    };
+    const parsed = parsePreset(presetJson({ category: decimalCategory }));
+
+    expect(parsed.category.priceRange).toEqual({
+      min: 9.99,
+      max: 99.99,
+      decimalPlaces: 2,
+    });
+  });
+
+  it.each([3, -1, 1.5])(
+    'rejects a decimalPlaces value of %s',
+    (decimalPlaces) => {
+      const invalidCategory = {
+        ...preset.category,
+        priceRange: { ...preset.category.priceRange, decimalPlaces },
+      };
+
+      expect(() =>
+        parsePreset(presetJson({ category: invalidCategory })),
+      ).toThrow('Preset category is invalid.');
+    },
+  );
+
+  it.each([
+    ['fractional image counts', { imageCountRange: { min: 1, max: 2.5 } }],
+    ['zero image counts', { imageCountRange: { min: 0, max: 2 } }],
+    ['negative stock', { stockRange: { min: -1, max: 10 } }],
+    ['inverted stock ranges', { stockRange: { min: 10, max: 5 } }],
+  ])('rejects %s', (_label, ranges) => {
+    expect(() =>
+      parsePreset(presetJson({
+        category: { ...preset.category, ...ranges },
+      })),
+    ).toThrow('Preset category is invalid.');
+  });
+
+  it('accepts categories without image or stock ranges', () => {
+    const legacyCategory = { ...preset.category };
+    delete legacyCategory.imageCountRange;
+    delete legacyCategory.stockRange;
+
+    const parsed = parsePreset(presetJson({ category: legacyCategory }));
+
+    expect(parsed.category.imageCountRange).toBeUndefined();
+    expect(parsed.category.stockRange).toBeUndefined();
+  });
+
   it('rejects invalid brands', () => {
     expect(() => parsePreset(presetJson({ brands: 'nope' }))).toThrow(
       'Preset brands are invalid.',
+    );
+  });
+
+  it('rejects non-positive brand weights', () => {
+    const invalidBrand = { ...preset.brands[0], weight: 0 };
+
+    expect(() => parsePreset(presetJson({
+      brands: [invalidBrand, preset.brands[1]],
+    }))).toThrow('Preset brands are invalid.');
+  });
+
+  it('rejects invalid category brand weights', () => {
+    const invalidCategory = {
+      ...preset.category,
+      brandWeights: { Apple: 0 },
+    };
+
+    expect(() => parsePreset(presetJson({ category: invalidCategory }))).toThrow(
+      'Preset category is invalid.',
     );
   });
 

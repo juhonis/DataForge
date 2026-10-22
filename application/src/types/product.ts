@@ -19,6 +19,12 @@ export interface Product {
 export interface PriceRange {
   min: number;
   max: number;
+  decimalPlaces?: 0 | 1 | 2;
+}
+
+export interface NumberRange {
+  min: number;
+  max: number;
 }
 
 export type IdFormat = 'uuid' | 'sequential' | 'custom';
@@ -43,6 +49,7 @@ export interface CategoryTemplate {
   defaultBrands: string[];
   models: string[]; // Generic fallback models
   brandModels: Record<string, string[]>; // Brand-specific models
+  brandWeights?: Record<string, number>; // Relative selection weight per default brand
   variants?: string[];
   nameTemplate: string;
   nameParts?: Record<string, string[]>;
@@ -50,6 +57,8 @@ export interface CategoryTemplate {
   dimensions: DimensionProfile;
   attributes: AttributeDefinition[];
   priceRange: PriceRange; // Global price range for this category
+  imageCountRange?: NumberRange; // Images per product, defaults to 1
+  stockRange?: NumberRange; // Stock quantity range, defaults to 0-100
   idFormat: IdFormat; // Format for generating product IDs
   idPrefix?: string; // Optional prefix for custom ID format
 }
@@ -65,6 +74,7 @@ export interface AttributeDefinition {
 export interface Brand {
   id: string;
   name: string;
+  weight?: number; // Relative selection weight, defaults to 1
   models: string[]; // All available models for this brand
   selectedModels: string[]; // Models currently selected for generation
   priceRange?: PriceRange; // Optional per-brand price range (overrides category default)

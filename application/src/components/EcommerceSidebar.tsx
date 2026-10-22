@@ -45,6 +45,7 @@ export const EcommerceSidebar: React.FC = () => {
     addBrand,
     removeBrand,
     updateBrand,
+    updateBrandWeight,
     resetBrands,
     toggleBrand,
     selectAllBrands,
@@ -692,8 +693,38 @@ export const EcommerceSidebar: React.FC = () => {
               {/* Models Section */}
               {expandedBrands[brand.id] && (
                 <div className="px-3 pb-3 border-t border-slate-700/30">
-                  {/* Brand Price Override */}
+                  {/* Brand Weight */}
                   <div className="pt-3 pb-2 flex items-center justify-between">
+                    <label
+                      htmlFor={`brand-weight-${brand.id}`}
+                      className="text-xs font-bold text-slate-400"
+                    >
+                      Selection Weight
+                    </label>
+                    <input
+                      key={`${brand.id}-${brand.weight ?? 1}`}
+                      id={`brand-weight-${brand.id}`}
+                      type="number"
+                      min={0.1}
+                      max={100}
+                      step={0.1}
+                      defaultValue={brand.weight ?? 1}
+                      onBlur={(event) =>
+                        updateBrandWeight(
+                          brand.id,
+                          Number.parseFloat(event.target.value),
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') event.currentTarget.blur();
+                      }}
+                      aria-label={`Selection weight for ${brand.name}`}
+                      className="w-16 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-right outline-none focus:ring-1 ring-indigo-500 text-slate-200"
+                    />
+                  </div>
+
+                  {/* Brand Price Override */}
+                  <div className="pt-2 pb-2 flex items-center justify-between border-t border-slate-700/20">
                     <span className="text-xs font-bold text-slate-400">Brand Price Range</span>
                     <div className="flex items-center gap-1">
                       {editingBrandPrice === brand.id ? (

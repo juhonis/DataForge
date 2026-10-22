@@ -96,6 +96,29 @@ describe('deterministic generation', () => {
   })
 })
 
+describe('brand weighting', () => {
+  it('selects brands proportionally to their weight', () => {
+    const category = CATEGORY_TEMPLATES[0]
+    const brands: Brand[] = [
+      makeBrand({ id: 'heavy', name: 'Heavy', weight: 3 }),
+      makeBrand({ id: 'light', name: 'Light', weight: 1 }),
+    ]
+    const products = generateProducts(
+      category,
+      brands,
+      brands.map((brand) => brand.id),
+      4000,
+      new SeededRng(123),
+    )
+    const heavyCount = products.filter(
+      (product) => product.brand === 'Heavy',
+    ).length
+
+    expect(heavyCount).toBeGreaterThan(2800)
+    expect(heavyCount).toBeLessThan(3200)
+  })
+})
+
 describe('price precedence', () => {
   const category = makeCategory({ priceRange: { min: 100_000, max: 100_001 } })
 
@@ -124,6 +147,75 @@ describe('price precedence', () => {
   })
 })
 
+describe('decimal pricing', () => {
+  const isWholeCents = (value: number): boolean =>
+    Math.abs(value * 100 - Math.round(value * 100)) < 1e-9
+  const category = makeCategory({
+    priceRange: { min: 10, max: 20, decimalPlaces: 2 },
+  })
+
+  it('generates prices with cent precision inside the configured range', () => {
+    const brand = makeBrand()
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      100,
+      new SeededRng(21),
+    )
+
+    for (const product of products) {
+      expect(product.price).toBeGreaterThanOrEqual(10)
+      expect(product.price).toBeLessThanOrEqual(20)
+      expect(isWholeCents(product.price)).toBe(true)
+    }
+
+    expect(products.some((product) => !Number.isInteger(product.price))).toBe(
+      true,
+    )
+  })
+
+  it('inherits category decimals for brand ranges', () => {
+    const brand = makeBrand({ priceRange: { min: 10, max: 20 } })
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      50,
+      new SeededRng(22),
+    )
+
+    expect(products.some((product) => !Number.isInteger(product.price))).toBe(
+      true,
+    )
+  })
+
+  it('keeps exact model prices unchanged', () => {
+    const brand = makeBrand({ modelPrices: { 'Test Model': 19.99 } })
+
+    expect(generateProduct(category, brand, new SeededRng(23)).price).toBe(
+      19.99,
+    )
+  })
+
+  it('honors an explicit integer brand range', () => {
+    const brand = makeBrand({
+      priceRange: { min: 10, max: 20, decimalPlaces: 0 },
+    })
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      50,
+      new SeededRng(24),
+    )
+
+    for (const product of products) {
+      expect(Number.isInteger(product.price)).toBe(true)
+    }
+  })
+})
+
 describe('generation constraints', () => {
   it('creates 10,000 products with unique ids, skus, and slugs', () => {
     const category = CATEGORY_TEMPLATES[0]
@@ -141,6 +233,50 @@ describe('generation constraints', () => {
     expect(new Set(products.map((product) => product.sku)).size).toBe(10_000)
     expect(new Set(products.map((product) => product.slug)).size).toBe(10_000)
   }, 20_000)
+
+  it('picks unique images and stock from fixed ranges', () => {
+    const category = makeCategory({
+      imageCountRange: { min: 3, max: 3 },
+      stockRange: { min: 42, max: 42 },
+    })
+    const product = generateProduct(category, makeBrand(), new SeededRng(4))
+
+    expect(product.images).toHaveLength(3)
+    expect(new Set(product.images).size).toBe(3)
+    expect(product.stock_quantity).toBe(42)
+  })
+
+  it('deduplicates the source image pool', () => {
+    const category = makeCategory({
+      unsplashIds: ['image-a', 'image-a', 'image-b'],
+      imageCountRange: { min: 2, max: 2 },
+    })
+    const product = generateProduct(category, makeBrand(), new SeededRng(6))
+
+    expect([...product.images].sort()).toEqual(['image-a', 'image-b'])
+  })
+
+  it('falls back to one image and 0-100 stock without ranges', () => {
+    const category = makeCategory({
+      imageCountRange: undefined,
+      stockRange: undefined,
+    })
+    const brand = makeBrand()
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      25,
+      new SeededRng(5),
+    )
+
+    for (const product of products) {
+      expect(product.images).toHaveLength(1)
+      expect(category.unsplashIds).toContain(product.images[0])
+      expect(product.stock_quantity).toBeGreaterThanOrEqual(0)
+      expect(product.stock_quantity).toBeLessThanOrEqual(100)
+    }
+  })
 
   it('can set dimensions to null according to the profile', () => {
     const category = makeCategory({
@@ -176,8 +312,30 @@ describe('category presets', () => {
         expect(product.description.trim(), category.id).not.toBe('')
         expect(product.slug.trim(), category.id).not.toBe('')
         expect(product.sku.startsWith(`${category.skuPrefix}-`), category.id).toBe(true)
-        expect(product.images, category.id).toHaveLength(1)
-        expect(category.unsplashIds, category.id).toContain(product.images[0])
+
+        const imageRange = category.imageCountRange ?? { min: 1, max: 1 }
+        const stockRange = category.stockRange ?? { min: 0, max: 100 }
+
+        expect(product.images.length, category.id).toBeGreaterThanOrEqual(
+          imageRange.min,
+        )
+        expect(product.images.length, category.id).toBeLessThanOrEqual(
+          imageRange.max,
+        )
+        expect(new Set(product.images).size, category.id).toBe(
+          product.images.length,
+        )
+
+        for (const image of product.images) {
+          expect(category.unsplashIds, category.id).toContain(image)
+        }
+
+        expect(product.stock_quantity, category.id).toBeGreaterThanOrEqual(
+          stockRange.min,
+        )
+        expect(product.stock_quantity, category.id).toBeLessThanOrEqual(
+          stockRange.max,
+        )
 
         for (const key of DIMENSION_KEYS) {
           const range = category.dimensions[key]

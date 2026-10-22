@@ -62,6 +62,82 @@ describe('category templates', () => {
     }
   })
 
+  it('declares positive default brand weights', () => {
+    for (const category of CATEGORY_TEMPLATES) {
+      for (const brand of category.defaultBrands) {
+        const weight = category.brandWeights?.[brand] ?? 1
+
+        expect(weight, `${category.id}.${brand}`).toBeGreaterThan(0)
+        expect(Number.isFinite(weight), `${category.id}.${brand}`).toBe(true)
+      }
+    }
+  })
+
+  it('opts only the retail-style categories into decimal prices', () => {
+    const decimalCategories = new Set([
+      'audio',
+      'accessories',
+      'books',
+      'clothing',
+    ])
+
+    for (const category of CATEGORY_TEMPLATES) {
+      const expected = decimalCategories.has(category.id) ? 2 : 0
+
+      expect(
+        category.priceRange.decimalPlaces ?? 0,
+        category.id,
+      ).toBe(expected)
+    }
+  })
+
+  it('declares the expected image count and stock ranges', () => {
+    const expected: Record<
+      string,
+      {
+        images: { min: number; max: number }
+        stock: { min: number; max: number }
+      }
+    > = {
+      smartphones: {
+        images: { min: 1, max: 3 },
+        stock: { min: 5, max: 250 },
+      },
+      laptops: {
+        images: { min: 1, max: 4 },
+        stock: { min: 2, max: 80 },
+      },
+      audio: {
+        images: { min: 1, max: 4 },
+        stock: { min: 10, max: 300 },
+      },
+      accessories: {
+        images: { min: 1, max: 3 },
+        stock: { min: 20, max: 500 },
+      },
+      books: {
+        images: { min: 1, max: 2 },
+        stock: { min: 10, max: 400 },
+      },
+      clothing: {
+        images: { min: 1, max: 2 },
+        stock: { min: 5, max: 350 },
+      },
+    }
+
+    for (const category of CATEGORY_TEMPLATES) {
+      const ranges = expected[category.id]
+
+      if (!ranges) throw new Error(`Missing expected ranges for ${category.id}`)
+
+      expect(category.imageCountRange, category.id).toEqual(ranges.images)
+      expect(category.stockRange, category.id).toEqual(ranges.stock)
+      expect(category.imageCountRange?.max, category.id).toBeLessThanOrEqual(
+        category.unsplashIds.length,
+      )
+    }
+  })
+
   it('keeps variant lists only where variants are used in names', () => {
     for (const category of CATEGORY_TEMPLATES) {
       if (category.usesVariantInName) {

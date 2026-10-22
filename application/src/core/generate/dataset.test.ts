@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Brand, CategoryTemplate } from '../../types/product'
 import { CATEGORY_TEMPLATES } from '../categories'
+import { roundMoney } from '../money'
 import { SeededRng } from '../rng'
 import { generateDataset, type DatasetConfig } from './index'
 
@@ -89,8 +90,52 @@ describe('generateDataset', () => {
       )
 
       expect(order.total).toBe(
+        roundMoney(lines.reduce((sum, line) => sum + line.line_total, 0)),
+      )
+    }
+  })
+
+  it('keeps decimal category prices and totals at cent precision', () => {
+    const category = CATEGORY_TEMPLATES.find(
+      (candidate) => candidate.id === 'audio',
+    )
+
+    if (!category) throw new Error('Audio category is missing')
+
+    const brands = makeBrands(category)
+    const dataset = generateDataset(
+      category,
+      brands,
+      brands.map((brand) => brand.id),
+      {
+        productCount: 25,
+        customerCount: 10,
+        ordersPerCustomer: { min: 1, max: 3 },
+        reviewCount: 20,
+      },
+      new SeededRng(49),
+      NOW,
+    )
+
+    expect(
+      dataset.products.some((product) => !Number.isInteger(product.price)),
+    ).toBe(true)
+
+    for (const line of dataset.order_lines) {
+      expect(line.line_total).toBe(
+        roundMoney(line.quantity * line.unit_price),
+      )
+    }
+
+    for (const order of dataset.orders) {
+      const lines = dataset.order_lines.filter(
+        (line) => line.order_id === order.id,
+      )
+      const total = roundMoney(
         lines.reduce((sum, line) => sum + line.line_total, 0),
       )
+
+      expect(order.total).toBe(total)
     }
   })
 

@@ -6,6 +6,7 @@ import type {
   DimensionProfile,
   DimensionRange,
   IdFormat,
+  NumberRange,
   PriceRange,
 } from '../types/product';
 
@@ -61,6 +62,9 @@ const isNonEmptyString = (value: unknown): value is string =>
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isPositiveNumber = (value: unknown): value is number =>
+  isFiniteNumber(value) && value > 0;
+
 const isIntegerBetween = (
   value: unknown,
   min: number,
@@ -81,14 +85,41 @@ const isRecordOfNumbers = (
 ): value is Record<string, number> =>
   isRecord(value) && Object.values(value).every(isFiniteNumber);
 
+const isRecordOfPositiveNumbers = (
+  value: unknown,
+): value is Record<string, number> =>
+  isRecord(value) && Object.values(value).every(isPositiveNumber);
+
 const isPriceRange = (value: unknown): value is PriceRange => {
   if (!isRecord(value)) return false;
+
+  if (
+    value.decimalPlaces !== undefined &&
+    !isIntegerBetween(value.decimalPlaces, 0, 2)
+  ) {
+    return false;
+  }
 
   return (
     isFiniteNumber(value.min) &&
     isFiniteNumber(value.max) &&
     value.min >= 0 &&
     value.max >= value.min
+  );
+};
+
+const isIntegerRange = (
+  value: unknown,
+  minValue: number,
+): value is NumberRange => {
+  if (!isRecord(value)) return false;
+
+  const { min, max } = value;
+
+  return (
+    isIntegerBetween(min, minValue, Number.MAX_SAFE_INTEGER) &&
+    isIntegerBetween(max, minValue, Number.MAX_SAFE_INTEGER) &&
+    max >= min
   );
 };
 
@@ -171,6 +202,24 @@ const isCategoryTemplate = (value: unknown): value is CategoryTemplate => {
   if (value.nameParts !== undefined && !isRecordOfStringArrays(value.nameParts)) {
     return false;
   }
+  if (
+    value.brandWeights !== undefined &&
+    !isRecordOfPositiveNumbers(value.brandWeights)
+  ) {
+    return false;
+  }
+  if (
+    value.imageCountRange !== undefined &&
+    !isIntegerRange(value.imageCountRange, 1)
+  ) {
+    return false;
+  }
+  if (
+    value.stockRange !== undefined &&
+    !isIntegerRange(value.stockRange, 0)
+  ) {
+    return false;
+  }
   if (value.idPrefix !== undefined && !isString(value.idPrefix)) return false;
 
   return true;
@@ -196,6 +245,10 @@ const isBrand = (value: unknown): value is Brand => {
     value.priceRange !== undefined &&
     !isPriceRange(value.priceRange)
   ) {
+    return false;
+  }
+
+  if (value.weight !== undefined && !isPositiveNumber(value.weight)) {
     return false;
   }
 

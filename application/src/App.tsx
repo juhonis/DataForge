@@ -8,6 +8,7 @@ import { toCsv } from './core/exporters/csv';
 import { toJson } from './core/exporters/json';
 import { datasetToSql, type SqlDialect } from './core/exporters/sql';
 import { SeededRng } from './core/rng';
+import { roundMoney } from './core/money';
 import { downloadText } from './lib/download';
 import type { Dataset } from './types/dataset';
 import {
@@ -257,7 +258,9 @@ function App() {
     const prices = products.map(p => p.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+    const avgPrice = roundMoney(
+      prices.reduce((a, b) => a + b, 0) / prices.length,
+    );
 
     const brandCounts = products.reduce((acc, p) => {
       acc[p.brand] = (acc[p.brand] || 0) + 1;

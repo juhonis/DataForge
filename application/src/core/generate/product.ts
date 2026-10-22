@@ -6,6 +6,7 @@ import type {
   DimensionProfile,
   DimensionRange,
   IdFormat,
+  NumberRange,
   Product,
 } from '../../types/product';
 import { SeededRng, type Rng } from '../rng';
@@ -145,11 +146,13 @@ const generatePrice = (
     return brand.modelPrices[model];
   }
 
-  if (brand.priceRange) {
-    return rng.int(brand.priceRange.min, brand.priceRange.max);
-  }
+  const range = brand.priceRange ?? category.priceRange;
+  const decimalPlaces =
+    range.decimalPlaces ?? category.priceRange.decimalPlaces ?? 0;
 
-  return rng.int(category.priceRange.min, category.priceRange.max);
+  return decimalPlaces === 0
+    ? rng.int(range.min, range.max)
+    : rng.float(range.min, range.max, decimalPlaces);
 };
 
 const generateDimension = (
@@ -178,6 +181,53 @@ const generateDimensions = (
   height_cm: generateDimension(profile.height_cm, rng),
 });
 
+const brandWeight = (brand: Brand): number =>
+  brand.weight !== undefined && Number.isFinite(brand.weight) && brand.weight > 0
+    ? brand.weight
+    : 1;
+
+const normalizeIntegerRange = (
+  range: NumberRange,
+  minAllowed = 0,
+): NumberRange => {
+  const min = Math.max(minAllowed, Math.floor(range.min));
+
+  return {
+    min,
+    max: Math.max(min, Math.floor(range.max)),
+  };
+};
+
+const generateImages = (
+  category: CategoryTemplate,
+  rng: Rng,
+): string[] => {
+  const pool = [...new Set(category.unsplashIds)];
+
+  if (pool.length === 0) return [];
+
+  const range = normalizeIntegerRange(
+    category.imageCountRange ?? { min: 1, max: 1 },
+    1,
+  );
+  const max = Math.min(pool.length, range.max);
+  const min = Math.min(max, range.min);
+  const count = rng.int(min, max);
+
+  return rng.shuffle(pool).slice(0, count);
+};
+
+const generateStock = (
+  category: CategoryTemplate,
+  rng: Rng,
+): number => {
+  const range = normalizeIntegerRange(
+    category.stockRange ?? { min: 0, max: 100 },
+  );
+
+  return rng.int(range.min, range.max);
+};
+
 export const generateProduct = (
   category: CategoryTemplate,
   brand: Brand,
@@ -196,11 +246,11 @@ export const generateProduct = (
     description: rng.productDescription(),
     slug: generateSlug(name, id),
     price,
-    stock_quantity: rng.int(0, 100),
+    stock_quantity: generateStock(category, rng),
     category: category.name,
     sku: generateSKU(category.skuPrefix, id),
     ...generateDimensions(category.dimensions, rng),
-    images: [rng.pick(category.unsplashIds)],
+    images: generateImages(category, rng),
     attributes,
   };
 };
@@ -221,10 +271,14 @@ export const generateProducts = (
     return products;
   }
 
+  const weightedBrands = selectedBrands.map(
+    (brand) => [brand, brandWeight(brand)] as const,
+  );
+
   resetSequentialCounter();
 
   for (let i = 0; i < count; i++) {
-    const brand = selectedBrands[i % selectedBrands.length];
+    const brand = rng.weighted(weightedBrands);
     products.push(generateProduct(category, brand, rng, i + 1));
   }
 
