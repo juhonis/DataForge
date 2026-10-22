@@ -27,6 +27,7 @@ interface StoreState {
   addBrand: (name: string) => void;
   removeBrand: (id: string) => void;
   updateBrand: (id: string, name: string) => void;
+  updateBrandWeight: (id: string, weight: number) => void;
   resetBrands: () => void;
   addBrandModel: (brandId: string, model: string) => void;
   removeBrandModel: (brandId: string, model: string) => void;
@@ -83,12 +84,15 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
     return {
       id: crypto.randomUUID(),
       name,
+      weight: category.brandWeights?.[name] ?? 1,
       models,
       selectedModels: [...models], // All models selected by default
       modelPrices: {}, // Empty price map initially
     };
   });
 };
+
+const initialBrands = createInitialBrands(defaultCategory);
 
 export const useStore = create<StoreState>()(
   persist(
@@ -248,7 +252,7 @@ removeAttribute: (categoryId, attributeKey) => {
   },
   
   // Brands
-  brands: createInitialBrands(defaultCategory),
+  brands: initialBrands,
   addBrand: (name) => {
     const { selectedCategory } = get();
     // Check if there are brand-specific models for this name
@@ -260,6 +264,7 @@ removeAttribute: (categoryId, attributeKey) => {
     const newBrand: Brand = {
       id: crypto.randomUUID(),
       name,
+      weight: selectedCategory.brandWeights?.[name] ?? 1,
       models,
       selectedModels: [...models],
       modelPrices: {},
@@ -278,6 +283,16 @@ removeAttribute: (categoryId, attributeKey) => {
   updateBrand: (id, name) => {
     set((state) => ({
       brands: state.brands.map(b => b.id === id ? { ...b, name } : b),
+    }));
+  },
+  updateBrandWeight: (id, weight) => {
+    const normalizedWeight =
+      Number.isFinite(weight) && weight > 0 ? weight : 1;
+
+    set((state) => ({
+      brands: state.brands.map(b =>
+        b.id === id ? { ...b, weight: normalizedWeight } : b
+      ),
     }));
   },
   resetBrands: () => {
@@ -323,7 +338,7 @@ removeAttribute: (categoryId, attributeKey) => {
     }));
   },
   
-  selectedBrands: createInitialBrands(defaultCategory).map(b => b.id),
+  selectedBrands: initialBrands.map(b => b.id),
   toggleBrand: (id) => {
     set((state) => ({
       selectedBrands: state.selectedBrands.includes(id)

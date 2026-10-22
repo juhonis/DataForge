@@ -61,6 +61,9 @@ const isNonEmptyString = (value: unknown): value is string =>
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const isPositiveNumber = (value: unknown): value is number =>
+  isFiniteNumber(value) && value > 0;
+
 const isIntegerBetween = (
   value: unknown,
   min: number,
@@ -80,6 +83,11 @@ const isRecordOfNumbers = (
   value: unknown,
 ): value is Record<string, number> =>
   isRecord(value) && Object.values(value).every(isFiniteNumber);
+
+const isRecordOfPositiveNumbers = (
+  value: unknown,
+): value is Record<string, number> =>
+  isRecord(value) && Object.values(value).every(isPositiveNumber);
 
 const isPriceRange = (value: unknown): value is PriceRange => {
   if (!isRecord(value)) return false;
@@ -171,6 +179,12 @@ const isCategoryTemplate = (value: unknown): value is CategoryTemplate => {
   if (value.nameParts !== undefined && !isRecordOfStringArrays(value.nameParts)) {
     return false;
   }
+  if (
+    value.brandWeights !== undefined &&
+    !isRecordOfPositiveNumbers(value.brandWeights)
+  ) {
+    return false;
+  }
   if (value.idPrefix !== undefined && !isString(value.idPrefix)) return false;
 
   return true;
@@ -196,6 +210,10 @@ const isBrand = (value: unknown): value is Brand => {
     value.priceRange !== undefined &&
     !isPriceRange(value.priceRange)
   ) {
+    return false;
+  }
+
+  if (value.weight !== undefined && !isPositiveNumber(value.weight)) {
     return false;
   }
 

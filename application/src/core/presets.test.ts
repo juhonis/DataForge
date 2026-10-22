@@ -17,6 +17,7 @@ const brands: Brand[] = [
   {
     id: 'brand-apple',
     name: 'Apple',
+    weight: 2.5,
     models: ['iPhone 15', 'iPhone 15 Pro'],
     selectedModels: ['iPhone 15'],
     priceRange: { min: 499, max: 1299 },
@@ -25,6 +26,7 @@ const brands: Brand[] = [
   {
     id: 'brand-google',
     name: 'Google',
+    weight: 1,
     models: ['Pixel 8'],
     selectedModels: ['Pixel 8'],
     modelPrices: {},
@@ -74,6 +76,7 @@ describe('preset serialization', () => {
 
     expect(apple?.models).toEqual(['iPhone 15', 'iPhone 15 Pro']);
     expect(apple?.selectedModels).toEqual(['iPhone 15']);
+    expect(apple?.weight).toBe(2.5);
     expect(apple?.priceRange).toEqual({ min: 499, max: 1299 });
     expect(apple?.modelPrices).toEqual({ 'iPhone 15': 799 });
   });
@@ -110,6 +113,25 @@ describe('preset serialization', () => {
   it('rejects invalid brands', () => {
     expect(() => parsePreset(presetJson({ brands: 'nope' }))).toThrow(
       'Preset brands are invalid.',
+    );
+  });
+
+  it('rejects non-positive brand weights', () => {
+    const invalidBrand = { ...preset.brands[0], weight: 0 };
+
+    expect(() => parsePreset(presetJson({
+      brands: [invalidBrand, preset.brands[1]],
+    }))).toThrow('Preset brands are invalid.');
+  });
+
+  it('rejects invalid category brand weights', () => {
+    const invalidCategory = {
+      ...preset.category,
+      brandWeights: { Apple: 0 },
+    };
+
+    expect(() => parsePreset(presetJson({ category: invalidCategory }))).toThrow(
+      'Preset category is invalid.',
     );
   });
 

@@ -96,6 +96,29 @@ describe('deterministic generation', () => {
   })
 })
 
+describe('brand weighting', () => {
+  it('selects brands proportionally to their weight', () => {
+    const category = CATEGORY_TEMPLATES[0]
+    const brands: Brand[] = [
+      makeBrand({ id: 'heavy', name: 'Heavy', weight: 3 }),
+      makeBrand({ id: 'light', name: 'Light', weight: 1 }),
+    ]
+    const products = generateProducts(
+      category,
+      brands,
+      brands.map((brand) => brand.id),
+      4000,
+      new SeededRng(123),
+    )
+    const heavyCount = products.filter(
+      (product) => product.brand === 'Heavy',
+    ).length
+
+    expect(heavyCount).toBeGreaterThan(2800)
+    expect(heavyCount).toBeLessThan(3200)
+  })
+})
+
 describe('price precedence', () => {
   const category = makeCategory({ priceRange: { min: 100_000, max: 100_001 } })
 

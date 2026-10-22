@@ -178,6 +178,11 @@ const generateDimensions = (
   height_cm: generateDimension(profile.height_cm, rng),
 });
 
+const brandWeight = (brand: Brand): number =>
+  brand.weight !== undefined && Number.isFinite(brand.weight) && brand.weight > 0
+    ? brand.weight
+    : 1;
+
 export const generateProduct = (
   category: CategoryTemplate,
   brand: Brand,
@@ -221,10 +226,14 @@ export const generateProducts = (
     return products;
   }
 
+  const weightedBrands = selectedBrands.map(
+    (brand) => [brand, brandWeight(brand)] as const,
+  );
+
   resetSequentialCounter();
 
   for (let i = 0; i < count; i++) {
-    const brand = selectedBrands[i % selectedBrands.length];
+    const brand = rng.weighted(weightedBrands);
     products.push(generateProduct(category, brand, rng, i + 1));
   }
 

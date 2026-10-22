@@ -43,6 +43,7 @@ export interface CategoryTemplate {
   defaultBrands: string[];
   models: string[]; // Generic fallback models
   brandModels: Record<string, string[]>; // Brand-specific models
+  brandWeights?: Record<string, number>; // Relative selection weight per default brand
   variants?: string[];
   nameTemplate: string;
   nameParts?: Record<string, string[]>;
@@ -65,6 +66,7 @@ export interface AttributeDefinition {
 export interface Brand {
   id: string;
   name: string;
+  weight?: number; // Relative selection weight, defaults to 1
   models: string[]; // All available models for this brand
   selectedModels: string[]; // Models currently selected for generation
   priceRange?: PriceRange; // Optional per-brand price range (overrides category default)

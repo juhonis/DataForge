@@ -62,6 +62,17 @@ describe('category templates', () => {
     }
   })
 
+  it('declares positive default brand weights', () => {
+    for (const category of CATEGORY_TEMPLATES) {
+      for (const brand of category.defaultBrands) {
+        const weight = category.brandWeights?.[brand] ?? 1
+
+        expect(weight, `${category.id}.${brand}`).toBeGreaterThan(0)
+        expect(Number.isFinite(weight), `${category.id}.${brand}`).toBe(true)
+      }
+    }
+  })
+
   it('keeps variant lists only where variants are used in names', () => {
     for (const category of CATEGORY_TEMPLATES) {
       if (category.usesVariantInName) {
