@@ -6,6 +6,7 @@ import type {
   DimensionProfile,
   DimensionRange,
   IdFormat,
+  NumberRange,
   PriceRange,
 } from '../types/product';
 
@@ -107,6 +108,21 @@ const isPriceRange = (value: unknown): value is PriceRange => {
   );
 };
 
+const isIntegerRange = (
+  value: unknown,
+  minValue: number,
+): value is NumberRange => {
+  if (!isRecord(value)) return false;
+
+  const { min, max } = value;
+
+  return (
+    isIntegerBetween(min, minValue, Number.MAX_SAFE_INTEGER) &&
+    isIntegerBetween(max, minValue, Number.MAX_SAFE_INTEGER) &&
+    max >= min
+  );
+};
+
 const isDimensionRange = (value: unknown): value is DimensionRange => {
   if (!isRecord(value)) return false;
 
@@ -189,6 +205,18 @@ const isCategoryTemplate = (value: unknown): value is CategoryTemplate => {
   if (
     value.brandWeights !== undefined &&
     !isRecordOfPositiveNumbers(value.brandWeights)
+  ) {
+    return false;
+  }
+  if (
+    value.imageCountRange !== undefined &&
+    !isIntegerRange(value.imageCountRange, 1)
+  ) {
+    return false;
+  }
+  if (
+    value.stockRange !== undefined &&
+    !isIntegerRange(value.stockRange, 0)
   ) {
     return false;
   }

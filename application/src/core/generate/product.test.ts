@@ -234,6 +234,50 @@ describe('generation constraints', () => {
     expect(new Set(products.map((product) => product.slug)).size).toBe(10_000)
   }, 20_000)
 
+  it('picks unique images and stock from fixed ranges', () => {
+    const category = makeCategory({
+      imageCountRange: { min: 3, max: 3 },
+      stockRange: { min: 42, max: 42 },
+    })
+    const product = generateProduct(category, makeBrand(), new SeededRng(4))
+
+    expect(product.images).toHaveLength(3)
+    expect(new Set(product.images).size).toBe(3)
+    expect(product.stock_quantity).toBe(42)
+  })
+
+  it('deduplicates the source image pool', () => {
+    const category = makeCategory({
+      unsplashIds: ['image-a', 'image-a', 'image-b'],
+      imageCountRange: { min: 2, max: 2 },
+    })
+    const product = generateProduct(category, makeBrand(), new SeededRng(6))
+
+    expect([...product.images].sort()).toEqual(['image-a', 'image-b'])
+  })
+
+  it('falls back to one image and 0-100 stock without ranges', () => {
+    const category = makeCategory({
+      imageCountRange: undefined,
+      stockRange: undefined,
+    })
+    const brand = makeBrand()
+    const products = generateProducts(
+      category,
+      [brand],
+      [brand.id],
+      25,
+      new SeededRng(5),
+    )
+
+    for (const product of products) {
+      expect(product.images).toHaveLength(1)
+      expect(category.unsplashIds).toContain(product.images[0])
+      expect(product.stock_quantity).toBeGreaterThanOrEqual(0)
+      expect(product.stock_quantity).toBeLessThanOrEqual(100)
+    }
+  })
+
   it('can set dimensions to null according to the profile', () => {
     const category = makeCategory({
       dimensions: {
@@ -268,8 +312,30 @@ describe('category presets', () => {
         expect(product.description.trim(), category.id).not.toBe('')
         expect(product.slug.trim(), category.id).not.toBe('')
         expect(product.sku.startsWith(`${category.skuPrefix}-`), category.id).toBe(true)
-        expect(product.images, category.id).toHaveLength(1)
-        expect(category.unsplashIds, category.id).toContain(product.images[0])
+
+        const imageRange = category.imageCountRange ?? { min: 1, max: 1 }
+        const stockRange = category.stockRange ?? { min: 0, max: 100 }
+
+        expect(product.images.length, category.id).toBeGreaterThanOrEqual(
+          imageRange.min,
+        )
+        expect(product.images.length, category.id).toBeLessThanOrEqual(
+          imageRange.max,
+        )
+        expect(new Set(product.images).size, category.id).toBe(
+          product.images.length,
+        )
+
+        for (const image of product.images) {
+          expect(category.unsplashIds, category.id).toContain(image)
+        }
+
+        expect(product.stock_quantity, category.id).toBeGreaterThanOrEqual(
+          stockRange.min,
+        )
+        expect(product.stock_quantity, category.id).toBeLessThanOrEqual(
+          stockRange.max,
+        )
 
         for (const key of DIMENSION_KEYS) {
           const range = category.dimensions[key]

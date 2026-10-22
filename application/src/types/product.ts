@@ -22,6 +22,11 @@ export interface PriceRange {
   decimalPlaces?: 0 | 1 | 2;
 }
 
+export interface NumberRange {
+  min: number;
+  max: number;
+}
+
 export type IdFormat = 'uuid' | 'sequential' | 'custom';
 
 export type DimensionKey = 'weight_kg' | 'length_cm' | 'width_cm' | 'height_cm';
@@ -52,6 +57,8 @@ export interface CategoryTemplate {
   dimensions: DimensionProfile;
   attributes: AttributeDefinition[];
   priceRange: PriceRange; // Global price range for this category
+  imageCountRange?: NumberRange; // Images per product, defaults to 1
+  stockRange?: NumberRange; // Stock quantity range, defaults to 0-100
   idFormat: IdFormat; // Format for generating product IDs
   idPrefix?: string; // Optional prefix for custom ID format
 }

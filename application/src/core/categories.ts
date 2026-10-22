@@ -56,6 +56,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
     priceRange: { min: 299, max: 1599 },
+    imageCountRange: { min: 1, max: 3 },
+    stockRange: { min: 5, max: 250 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -106,6 +108,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 1, max: 2 },
     },
     priceRange: { min: 599, max: 3999 },
+    imageCountRange: { min: 1, max: 4 },
+    stockRange: { min: 2, max: 80 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -160,6 +164,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
     priceRange: { min: 49, max: 499, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 4 },
+    stockRange: { min: 10, max: 300 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -206,6 +212,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 0.7, max: 0.9, fractionDigits: 1 },
     },
     priceRange: { min: 9, max: 299, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 3 },
+    stockRange: { min: 20, max: 500 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -252,6 +260,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 1, max: 5 },
     },
     priceRange: { min: 9, max: 99, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 2 },
+    stockRange: { min: 10, max: 400 },
     idFormat: 'uuid',
     attributes: [
       {
@@ -306,6 +316,8 @@ export const CATEGORY_TEMPLATES: CategoryTemplate[] = [
       height_cm: { min: 1, max: 8 },
     },
     priceRange: { min: 19, max: 599, decimalPlaces: 2 },
+    imageCountRange: { min: 1, max: 2 },
+    stockRange: { min: 5, max: 350 },
     idFormat: 'uuid',
     attributes: [
       {

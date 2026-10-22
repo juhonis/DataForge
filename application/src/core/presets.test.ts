@@ -138,6 +138,30 @@ describe('preset serialization', () => {
     },
   );
 
+  it.each([
+    ['fractional image counts', { imageCountRange: { min: 1, max: 2.5 } }],
+    ['zero image counts', { imageCountRange: { min: 0, max: 2 } }],
+    ['negative stock', { stockRange: { min: -1, max: 10 } }],
+    ['inverted stock ranges', { stockRange: { min: 10, max: 5 } }],
+  ])('rejects %s', (_label, ranges) => {
+    expect(() =>
+      parsePreset(presetJson({
+        category: { ...preset.category, ...ranges },
+      })),
+    ).toThrow('Preset category is invalid.');
+  });
+
+  it('accepts categories without image or stock ranges', () => {
+    const legacyCategory = { ...preset.category };
+    delete legacyCategory.imageCountRange;
+    delete legacyCategory.stockRange;
+
+    const parsed = parsePreset(presetJson({ category: legacyCategory }));
+
+    expect(parsed.category.imageCountRange).toBeUndefined();
+    expect(parsed.category.stockRange).toBeUndefined();
+  });
+
   it('rejects invalid brands', () => {
     expect(() => parsePreset(presetJson({ brands: 'nope' }))).toThrow(
       'Preset brands are invalid.',
