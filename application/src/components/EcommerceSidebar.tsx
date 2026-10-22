@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
+import { Brand, AttributeDefinition } from '../types/product';
 import { 
   Plus, 
   Trash2, 
   Package, 
-  Tag, 
   ChevronDown, 
   ChevronRight,
   Check,
@@ -13,7 +12,6 @@ import {
   Edit3,
   Save,
   X,
-  Settings2,
   Hash,
   Type,
   List,
@@ -23,9 +21,8 @@ import {
 import {
   isValidPriceRange,
   normalizeAttributeKey,
-  normalizeSkuPrefix,
-  slugify,
 } from '../core/normalize';
+import { CategorySection } from './sidebar/CategorySection';
 
 // Attribute type options
 const ATTRIBUTE_TYPES = [
@@ -37,9 +34,7 @@ const ATTRIBUTE_TYPES = [
 
 export const EcommerceSidebar: React.FC = () => {
   const {
-    categories,
     selectedCategory,
-    setSelectedCategory,
     brands,
     selectedBrands,
     addBrand,
@@ -50,7 +45,6 @@ export const EcommerceSidebar: React.FC = () => {
     toggleBrand,
     selectAllBrands,
     deselectAllBrands,
-    updateCategory,
     addAttribute,
     updateAttribute,
     removeAttribute,
@@ -62,7 +56,6 @@ export const EcommerceSidebar: React.FC = () => {
     toggleBrandModel,
     selectAllBrandModels,
     deselectAllBrandModels,
-    updateCategoryPriceRange,
     updateBrandPriceRange,
     removeBrandPriceRange,
     setModelPrice,
@@ -88,25 +81,14 @@ export const EcommerceSidebar: React.FC = () => {
   const [addingAttr, setAddingAttr] = useState(false);
   const [newAttrKey, setNewAttrKey] = useState('');
   
-  // Category edit state
-  const [editingCategory, setEditingCategory] = useState(false);
-  const [editCategoryName, setEditCategoryName] = useState('');
-  const [editSkuPrefix, setEditSkuPrefix] = useState('');
-  const [editIdFormat, setEditIdFormat] = useState<'uuid' | 'sequential' | 'custom'>('uuid');
-  const [editIdPrefix, setEditIdPrefix] = useState('');
-  
   // Expand/collapse sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     category: true,
-    pricing: true,
     brands: true,
   });
   const [expandedBrands, setExpandedBrands] = useState<Record<string, boolean>>({});
   
   // Price editing state
-  const [editingCategoryPrice, setEditingCategoryPrice] = useState(false);
-  const [editCatPriceMin, setEditCatPriceMin] = useState(selectedCategory.priceRange.min);
-  const [editCatPriceMax, setEditCatPriceMax] = useState(selectedCategory.priceRange.max);
   const [editingBrandPrice, setEditingBrandPrice] = useState<string | null>(null);
   const [editBrandPriceMin, setEditBrandPriceMin] = useState<number>(0);
   const [editBrandPriceMax, setEditBrandPriceMax] = useState<number>(1000);
@@ -146,56 +128,7 @@ export const EcommerceSidebar: React.FC = () => {
     setExpandedBrands(prev => ({ ...prev, [brandId]: !prev[brandId] }));
   };
 
-  const startEditingCategory = () => {
-    setEditingCategory(true);
-    setEditCategoryName(selectedCategory.name);
-    setEditSkuPrefix(selectedCategory.skuPrefix);
-    setEditIdFormat(selectedCategory.idFormat || 'uuid');
-    setEditIdPrefix(selectedCategory.idPrefix || '');
-  };
-
-  const saveCategoryEdit = () => {
-    if (editCategoryName.trim() && editSkuPrefix.trim()) {
-      const updates: Partial<CategoryTemplate> = {
-        name: editCategoryName.trim(),
-        skuPrefix: editSkuPrefix,
-        slug: slugify(editCategoryName),
-        idFormat: editIdFormat,
-      };
-      if (editIdFormat === 'custom') {
-        updates.idPrefix = editIdPrefix;
-      }
-      updateCategory(selectedCategory.id, updates);
-      setEditingCategory(false);
-    }
-  };
-
-  const cancelCategoryEdit = () => {
-    setEditingCategory(false);
-    setEditCategoryName('');
-    setEditSkuPrefix('');
-    setEditIdFormat('uuid');
-    setEditIdPrefix('');
-  };
-
   // Price editing handlers
-  const startEditingCategoryPrice = () => {
-    setEditingCategoryPrice(true);
-    setEditCatPriceMin(selectedCategory.priceRange.min);
-    setEditCatPriceMax(selectedCategory.priceRange.max);
-  };
-
-  const saveCategoryPriceEdit = () => {
-    if (isValidPriceRange(editCatPriceMin, editCatPriceMax)) {
-      updateCategoryPriceRange(selectedCategory.id, editCatPriceMin, editCatPriceMax);
-      setEditingCategoryPrice(false);
-    }
-  };
-
-  const cancelCategoryPriceEdit = () => {
-    setEditingCategoryPrice(false);
-  };
-
   const startEditingBrandPrice = (brand: Brand) => {
     setEditingBrandPrice(brand.id);
     setEditBrandPriceMin(brand.priceRange?.min ?? selectedCategory.priceRange.min);
@@ -339,198 +272,11 @@ export const EcommerceSidebar: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* Category Section */}
-        <div className="border-b border-slate-800">
-          <button
-            onClick={() => toggleSection('category')}
-            className="w-full px-5 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
-          >
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Tag className="w-3 h-3" />
-              Category Settings
-            </span>
-            {expandedSections.category ? (
-              <ChevronDown className="w-4 h-4 text-slate-500" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-slate-500" />
-            )}
-          </button>
-
-          {expandedSections.category && (
-            <div className="px-5 pb-4 space-y-3">
-              {/* Category Selector */}
-              <select
-                value={selectedCategory.id}
-                onChange={(e) => {
-                  const category = categories.find(c => c.id === e.target.value);
-                  if (category) setSelectedCategory(category);
-                }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-1 ring-indigo-500 transition-all text-slate-200"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* Category Info / Edit */}
-              {editingCategory ? (
-                <div className="space-y-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                  <div>
-                    <label htmlFor="edit-category-name" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                      Category Name
-                    </label>
-                    <input
-                      id="edit-category-name"
-                      type="text"
-                      value={editCategoryName}
-                      onChange={(e) => setEditCategoryName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
-                    />
-                  </div>
-                <div>
-                  <label htmlFor="edit-sku-prefix" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                    SKU Prefix
-                  </label>
-                  <input
-                    id="edit-sku-prefix"
-                    type="text"
-                    value={editSkuPrefix}
-                    onChange={(e) => setEditSkuPrefix(normalizeSkuPrefix(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="edit-id-format" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                    ID Format
-                  </label>
-                  <select
-                    id="edit-id-format"
-                    value={editIdFormat}
-                    onChange={(e) => setEditIdFormat(e.target.value as 'uuid' | 'sequential' | 'custom')}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
-                  >
-                    <option value="uuid">UUID</option>
-                    <option value="sequential">Sequential</option>
-                    <option value="custom">Custom</option>
-                  </select>
-                </div>
-                {editIdFormat === 'custom' && (
-                  <div>
-                    <label htmlFor="edit-id-prefix" className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">
-                      ID Prefix
-                    </label>
-                    <input
-                      id="edit-id-prefix"
-                      type="text"
-                      value={editIdPrefix}
-                      onChange={(e) => setEditIdPrefix(e.target.value)}
-                      placeholder="e.g., PROD-"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200 font-mono"
-                    />
-                  </div>
-                )}
-                <div className="flex gap-2">
-                    <button
-                      onClick={saveCategoryEdit}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition-all"
-                    >
-                      <Save className="w-4 h-4" />
-                      Save
-                    </button>
-                    <button
-                      onClick={cancelCategoryEdit}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-bold transition-all"
-                    >
-                      <X className="w-4 h-4" />
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-      ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-slate-500 mb-1">SKU Prefix</div>
-                      <div className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded text-sm font-mono text-indigo-400">
-                        {selectedCategory.skuPrefix}-
-                      </div>
-                    </div>
-                    <button
-                      onClick={startEditingCategory}
-                      className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-300 transition-all"
-                    >
-                      <Settings2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Category Price Range */}
-                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-300">Price Range</span>
-                      {!editingCategoryPrice && (
-                        <button
-                          onClick={startEditingCategoryPrice}
-                          className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded transition-all"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                    
-                    {editingCategoryPrice ? (
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <input
-                              type="number"
-                              min={0}
-                              placeholder="Min"
-                              value={editCatPriceMin}
-                              onChange={(e) => setEditCatPriceMin(parseInt(e.target.value) || 0)}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              type="number"
-                              min={0}
-                              placeholder="Max"
-                              value={editCatPriceMax}
-                              onChange={(e) => setEditCatPriceMax(parseInt(e.target.value) || 0)}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 ring-indigo-500 text-slate-200"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={saveCategoryPriceEdit}
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold transition-all"
-                          >
-                            <Save className="w-3 h-3" />
-                            Save
-                          </button>
-                          <button
-                            onClick={cancelCategoryPriceEdit}
-                            className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold transition-all"
-                          >
-                            <X className="w-3 h-3" />
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-slate-400">
-                        ${selectedCategory.priceRange.min} - ${selectedCategory.priceRange.max}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <CategorySection
+          key={selectedCategory.id}
+          expanded={expandedSections.category}
+          onToggle={() => toggleSection('category')}
+        />
 
         {/* Brands & Models Section */}
     <div className="border-b border-slate-800">
