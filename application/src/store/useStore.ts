@@ -150,10 +150,16 @@ export const useStore = create<StoreState>()(
   
   // Attribute management
   addAttribute: (categoryId, attribute) => {
+    const key = attribute.key.trim();
+
+    if (!key) return;
+
+    const nextAttribute = key === attribute.key ? attribute : { ...attribute, key };
+
     set((state) => {
       const updateCategoryAttrs = (c: CategoryTemplate) =>
-        c.id === categoryId
-          ? { ...c, attributes: [...c.attributes, attribute] }
+        c.id === categoryId && !c.attributes.some((candidate) => candidate.key === key)
+          ? { ...c, attributes: [...c.attributes, nextAttribute] }
           : c;
       return {
         categories: state.categories.map(updateCategoryAttrs),
@@ -164,15 +170,34 @@ export const useStore = create<StoreState>()(
 
   updateAttribute: (categoryId, attributeKey, updates) => {
     set((state) => {
-      const updateCategoryAttrs = (c: CategoryTemplate) =>
-        c.id === categoryId
-          ? {
-              ...c,
-              attributes: c.attributes.map(a =>
-                a.key === attributeKey ? { ...a, ...updates } : a
-              )
-            }
-          : c;
+      const updateCategoryAttrs = (c: CategoryTemplate) => {
+        if (c.id !== categoryId) return c;
+
+        let nextUpdates = updates;
+
+        if (updates.key !== undefined) {
+          const nextKey = updates.key.trim();
+
+          if (
+            !nextKey ||
+            (nextKey !== attributeKey &&
+              c.attributes.some((attribute) => attribute.key === nextKey))
+          ) {
+            return c;
+          }
+
+          nextUpdates = { ...updates, key: nextKey };
+        }
+
+        return {
+          ...c,
+          attributes: c.attributes.map((attribute) =>
+            attribute.key === attributeKey
+              ? { ...attribute, ...nextUpdates }
+              : attribute
+          ),
+        };
+      };
       return {
         categories: state.categories.map(updateCategoryAttrs),
         selectedCategory: updateCategoryAttrs(state.selectedCategory),
@@ -181,22 +206,35 @@ export const useStore = create<StoreState>()(
   },
 
   renameAttributeKey: (categoryId, oldKey, newKey) => {
-  set((state) => {
-    const updateCategoryAttrs = (c: CategoryTemplate) =>
-      c.id === categoryId
-        ? {
-            ...c,
-            attributes: c.attributes.map(a =>
-              a.key === oldKey ? { ...a, key: newKey } : a
-            )
-          }
-        : c;
-    return {
-      categories: state.categories.map(updateCategoryAttrs),
-      selectedCategory: updateCategoryAttrs(state.selectedCategory),
-    };
-  });
-},
+    const nextKey = newKey.trim();
+
+    if (!nextKey || nextKey === oldKey) return;
+
+    set((state) => {
+      const updateCategoryAttrs = (c: CategoryTemplate) => {
+        if (
+          c.id !== categoryId ||
+          !c.attributes.some((attribute) => attribute.key === oldKey) ||
+          c.attributes.some((attribute) => attribute.key === nextKey)
+        ) {
+          return c;
+        }
+
+        return {
+          ...c,
+          attributes: c.attributes.map((attribute) =>
+            attribute.key === oldKey
+              ? { ...attribute, key: nextKey }
+              : attribute
+          ),
+        };
+      };
+      return {
+        categories: state.categories.map(updateCategoryAttrs),
+        selectedCategory: updateCategoryAttrs(state.selectedCategory),
+      };
+    });
+  },
 
 removeAttribute: (categoryId, attributeKey) => {
     set((state) => {
@@ -212,16 +250,24 @@ removeAttribute: (categoryId, attributeKey) => {
   },
   
   addAttributeOption: (categoryId, attributeKey, option) => {
+    const nextOption = option.trim();
+
+    if (!nextOption) return;
+
     set((state) => {
       const updateCategoryAttrs = (c: CategoryTemplate) => 
         c.id === categoryId 
           ? { 
               ...c, 
-              attributes: c.attributes.map(a => 
-                a.key === attributeKey 
-                  ? { ...a, options: [...(a.options || []), option] }
-                  : a
-              )
+              attributes: c.attributes.map(a => {
+                if (a.key !== attributeKey) return a;
+
+                const options = a.options ?? [];
+
+                return options.includes(nextOption)
+                  ? a
+                  : { ...a, options: [...options, nextOption] };
+              })
             }
           : c;
       return {
@@ -254,17 +300,24 @@ removeAttribute: (categoryId, attributeKey) => {
   // Brands
   brands: initialBrands,
   addBrand: (name) => {
-    const { selectedCategory } = get();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) return;
+
+    const { selectedCategory, brands } = get();
+
+    if (brands.some((brand) => brand.name === trimmedName)) return;
+
     // Check if there are brand-specific models for this name
-    const brandSpecificModels = selectedCategory.brandModels?.[name];
+    const brandSpecificModels = selectedCategory.brandModels?.[trimmedName];
     const models = brandSpecificModels && brandSpecificModels.length > 0
       ? brandSpecificModels
       : [...selectedCategory.models];
     
     const newBrand: Brand = {
       id: crypto.randomUUID(),
-      name,
-      weight: selectedCategory.brandWeights?.[name] ?? 1,
+      name: trimmedName,
+      weight: selectedCategory.brandWeights?.[trimmedName] ?? 1,
       models,
       selectedModels: [...models],
       modelPrices: {},
@@ -281,8 +334,24 @@ removeAttribute: (categoryId, attributeKey) => {
     }));
   },
   updateBrand: (id, name) => {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) return;
+
+    const { brands } = get();
+
+    if (
+      brands.some(
+        (brand) => brand.id !== id && brand.name === trimmedName,
+      )
+    ) {
+      return;
+    }
+
     set((state) => ({
-      brands: state.brands.map(b => b.id === id ? { ...b, name } : b),
+      brands: state.brands.map(b =>
+        b.id === id ? { ...b, name: trimmedName } : b
+      ),
     }));
   },
   updateBrandWeight: (id, weight) => {
@@ -305,36 +374,74 @@ removeAttribute: (categoryId, attributeKey) => {
   },
   
   addBrandModel: (brandId, model) => {
+    const nextModel = model.trim();
+
+    if (!nextModel) return;
+
     set((state) => ({
-      brands: state.brands.map(b =>
-        b.id === brandId
-          ? { ...b, models: [...b.models, model] }
-          : b
-      ),
+      brands: state.brands.map(b => {
+        if (b.id !== brandId || b.models.includes(nextModel)) return b;
+
+        return {
+          ...b,
+          models: [...b.models, nextModel],
+          selectedModels: b.selectedModels.includes(nextModel)
+            ? b.selectedModels
+            : [...b.selectedModels, nextModel],
+        };
+      }),
     }));
   },
   
   removeBrandModel: (brandId, model) => {
     set((state) => ({
-      brands: state.brands.map(b =>
-        b.id === brandId
-          ? { 
-              ...b, 
-              models: b.models.filter(m => m !== model),
-              selectedModels: b.selectedModels.filter(m => m !== model)
-            }
-          : b
-      ),
+      brands: state.brands.map(b => {
+        if (b.id !== brandId) return b;
+
+        const modelPrices = { ...b.modelPrices };
+        delete modelPrices[model];
+
+        return {
+          ...b,
+          models: b.models.filter(m => m !== model),
+          selectedModels: b.selectedModels.filter(m => m !== model),
+          modelPrices,
+        };
+      }),
     }));
   },
   
   updateBrandModel: (brandId, oldModel, newModel) => {
+    const nextModel = newModel.trim();
+
+    if (!nextModel || nextModel === oldModel) return;
+
     set((state) => ({
-      brands: state.brands.map(b =>
-        b.id === brandId
-          ? { ...b, models: b.models.map(m => m === oldModel ? newModel : m) }
-          : b
-      ),
+      brands: state.brands.map(b => {
+        if (
+          b.id !== brandId ||
+          !b.models.includes(oldModel) ||
+          b.models.includes(nextModel)
+        ) {
+          return b;
+        }
+
+        const modelPrices = { ...b.modelPrices };
+
+        if (oldModel in modelPrices) {
+          modelPrices[nextModel] = modelPrices[oldModel];
+          delete modelPrices[oldModel];
+        }
+
+        return {
+          ...b,
+          models: b.models.map(m => m === oldModel ? nextModel : m),
+          selectedModels: b.selectedModels.map(m =>
+            m === oldModel ? nextModel : m
+          ),
+          modelPrices,
+        };
+      }),
     }));
   },
   
