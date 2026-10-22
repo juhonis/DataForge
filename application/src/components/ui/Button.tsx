@@ -5,6 +5,7 @@ export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
+  | 'plain'
   | 'danger'
   | 'success';
 
@@ -23,6 +24,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white focus-visible:ring-slate-400',
   ghost:
     'text-slate-400 hover:bg-slate-800 hover:text-slate-200 focus-visible:ring-slate-400',
+  plain: '',
   danger:
     'bg-red-600 text-white hover:bg-red-500 focus-visible:ring-red-400',
   success:
