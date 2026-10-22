@@ -53,7 +53,6 @@ export const EcommerceSidebar: React.FC = () => {
     updateCategory,
     addAttribute,
     updateAttribute,
-    renameAttributeKey,
     removeAttribute,
     addAttributeOption,
     removeAttributeOption,
@@ -257,13 +256,14 @@ export const EcommerceSidebar: React.FC = () => {
         updates.max = editAttrMax;
       }
 
-      updateAttribute(selectedCategory.id, editingAttr, updates);
-      
-      // Handle key rename if changed
-      if (editAttrKey.trim() && editAttrKey !== editingAttr) {
-        renameAttributeKey(selectedCategory.id, editingAttr, normalizeAttributeKey(editAttrKey));
+      const nextKey = normalizeAttributeKey(editAttrKey);
+
+      if (nextKey && nextKey !== editingAttr) {
+        updates.key = nextKey;
       }
-      
+
+      updateAttribute(selectedCategory.id, editingAttr, updates);
+
       setEditingAttr(null);
       setEditAttrKey('');
     }
