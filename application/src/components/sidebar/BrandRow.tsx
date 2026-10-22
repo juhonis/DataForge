@@ -24,7 +24,7 @@ interface BrandRowProps {
   brand: Brand;
 }
 
-export const BrandRow: React.FC<BrandRowProps> = ({ brand }) => {
+const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
   const selected = useStore((state) =>
     state.selectedBrands.includes(brand.id),
   );
@@ -272,5 +272,7 @@ export const BrandRow: React.FC<BrandRowProps> = ({ brand }) => {
     </div>
   );
 };
+
+export const BrandRow = React.memo(BrandRowComponent);
 
 BrandRow.displayName = 'BrandRow';

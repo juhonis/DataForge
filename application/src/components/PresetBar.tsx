@@ -9,7 +9,12 @@ import {
 } from '../core/presets';
 import { downloadText } from '../lib/download';
 import { useStore } from '../store/useStore';
-import { NumberInput } from './ui';
+import {
+  Button,
+  IconButton,
+  NumberInput,
+  Select,
+} from './ui';
 
 interface PresetBarProps {
   onPresetApplied: () => void;
@@ -23,17 +28,15 @@ type Notice = {
 const MAX_SEED = 1_000_000_000;
 
 export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
-  const {
-    categories,
-    selectedCategory,
-    brands,
-    selectedBrands,
-    settings,
-    setSelectedCategory,
-    addCategory,
-    updateSettings,
-    applyPreset,
-  } = useStore();
+  const categories = useStore((state) => state.categories);
+  const selectedCategory = useStore((state) => state.selectedCategory);
+  const brands = useStore((state) => state.brands);
+  const selectedBrands = useStore((state) => state.selectedBrands);
+  const settings = useStore((state) => state.settings);
+  const setSelectedCategory = useStore((state) => state.setSelectedCategory);
+  const addCategory = useStore((state) => state.addCategory);
+  const updateSettings = useStore((state) => state.updateSettings);
+  const applyPreset = useStore((state) => state.applyPreset);
 
   const [presetId, setPresetId] = useState(BUNDLED_PRESETS[0].id);
   const [notice, setNotice] = useState<Notice>(null);
@@ -138,25 +141,26 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
       </div>
 
       <div className="flex items-center gap-1">
-        <select
+        <Select
+          variant="bare"
           value={presetId}
           onChange={(event) => setPresetId(event.target.value)}
           aria-label="Bundled preset"
-          className="bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 px-2 py-1.5 outline-none max-w-[180px]"
+          className="max-w-[180px] rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-slate-300"
         >
           {BUNDLED_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
               {preset.name}
             </option>
           ))}
-        </select>
-        <button
-          type="button"
+        </Select>
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleLoadBundled}
-          className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
         >
           Load
-        </button>
+        </Button>
       </div>
 
       <div className="h-5 w-px bg-slate-800 hidden sm:block" />
@@ -178,45 +182,39 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
           onValueChange={updateSeed}
           className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm font-bold text-indigo-400 text-center outline-none"
         />
-        <button
-          type="button"
-          onClick={randomizeSeed}
-          title="Randomize seed"
-          aria-label="Randomize seed"
-          className="p-1 text-slate-500 hover:text-indigo-400 transition-colors"
-        >
-          <Dices className="w-4 h-4" />
-        </button>
+        <IconButton label="Randomize seed" onClick={randomizeSeed}>
+          <Dices className="h-4 w-4" />
+        </IconButton>
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => void handleCopy()}
-          title="Copy preset to clipboard"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+          aria-label="Copy preset to clipboard"
         >
-          <Copy className="w-3.5 h-3.5" />
+          <Copy className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Copy</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => fileInputRef.current?.click()}
-          title="Import preset"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+          aria-label="Import preset"
         >
-          <Upload className="w-3.5 h-3.5" />
+          <Upload className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Import</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleExport}
-          title="Export preset"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+          aria-label="Export preset"
         >
-          <Download className="w-3.5 h-3.5" />
+          <Download className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Export</span>
-        </button>
+        </Button>
         <input
           ref={fileInputRef}
           type="file"
