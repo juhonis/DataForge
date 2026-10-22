@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EcommerceSidebar } from './components/EcommerceSidebar';
 import { PresetBar } from './components/PresetBar';
+import { NumberInput } from './components/ui';
 import { useStore } from './store/useStore';
 import { generateDataset } from './core/generate';
 import { generateProducts } from './core/generate/product';
@@ -35,14 +36,6 @@ type DatasetTab = (typeof DATASET_TABS)[number]['key'];
 
 const EMPTY_PRODUCTS: Dataset['products'] = [];
 const EMPTY_ROWS: object[] = [];
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-const clampCount = (value: string, fallback: number, max: number): number => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? fallback : clamp(parsed, 0, max);
-};
 
 function App() {
   const {
@@ -213,21 +206,15 @@ function App() {
     );
   };
 
-  const updateCustomerCount = (value: string) => {
-    updateSettings({
-      customerCount: clampCount(value, settings.customerCount, 1000),
-    });
+  const updateCustomerCount = (value: number) => {
+    updateSettings({ customerCount: value });
   };
 
-  const updateReviewCount = (value: string) => {
-    updateSettings({
-      reviewCount: clampCount(value, settings.reviewCount, 1000),
-    });
+  const updateReviewCount = (value: number) => {
+    updateSettings({ reviewCount: value });
   };
 
-  const updateMinOrders = (value: string) => {
-    const min = clampCount(value, settings.ordersPerCustomer.min, 10);
-
+  const updateMinOrders = (min: number) => {
     updateSettings({
       ordersPerCustomer: {
         min,
@@ -236,9 +223,7 @@ function App() {
     });
   };
 
-  const updateMaxOrders = (value: string) => {
-    const max = clampCount(value, settings.ordersPerCustomer.max, 10);
-
+  const updateMaxOrders = (max: number) => {
     updateSettings({
       ordersPerCustomer: {
         min: Math.min(max, settings.ordersPerCustomer.min),
@@ -309,15 +294,16 @@ function App() {
             ))}
             <div className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg">
               <span className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">Custom</span>
-              <input
-                type="number"
+              <NumberInput
+                variant="bare"
                 min={1}
                 max={1000}
+                integer
                 className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
                 value={settings.productCount}
-                onChange={(e) => updateSettings({
-                  productCount: Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)),
-                })}
+                onValueChange={(productCount) =>
+                  updateSettings({ productCount })
+                }
               />
             </div>
           </div>
@@ -327,15 +313,16 @@ function App() {
             <label htmlFor="customer-count" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
               Customers
             </label>
-            <input
+            <NumberInput
               id="customer-count"
-              type="number"
+              variant="bare"
               min={0}
               max={1000}
+              integer
               aria-label="Customer count"
               className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
               value={settings.customerCount}
-              onChange={(event) => updateCustomerCount(event.target.value)}
+              onValueChange={updateCustomerCount}
             />
 
             <div className="h-4 w-px bg-slate-700" />
@@ -343,25 +330,27 @@ function App() {
             <label htmlFor="min-orders" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
               Orders/customer
             </label>
-            <input
+            <NumberInput
               id="min-orders"
-              type="number"
+              variant="bare"
               min={0}
               max={10}
+              integer
               aria-label="Minimum orders per customer"
               className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
               value={settings.ordersPerCustomer.min}
-              onChange={(event) => updateMinOrders(event.target.value)}
+              onValueChange={updateMinOrders}
             />
             <span className="text-slate-600">–</span>
-            <input
-              type="number"
+            <NumberInput
+              variant="bare"
               min={0}
               max={10}
+              integer
               aria-label="Maximum orders per customer"
               className="w-8 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
               value={settings.ordersPerCustomer.max}
-              onChange={(event) => updateMaxOrders(event.target.value)}
+              onValueChange={updateMaxOrders}
             />
 
             <div className="h-4 w-px bg-slate-700" />
@@ -369,15 +358,16 @@ function App() {
             <label htmlFor="review-count" className="text-[10px] font-bold uppercase text-slate-500 hidden sm:inline">
               Reviews
             </label>
-            <input
+            <NumberInput
               id="review-count"
-              type="number"
+              variant="bare"
               min={0}
               max={1000}
+              integer
               aria-label="Review count"
               className="w-10 lg:w-12 bg-transparent outline-none text-sm font-bold text-indigo-400 text-center"
               value={settings.reviewCount}
-              onChange={(event) => updateReviewCount(event.target.value)}
+              onValueChange={updateReviewCount}
             />
           </div>
 

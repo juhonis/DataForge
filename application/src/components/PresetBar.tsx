@@ -9,6 +9,7 @@ import {
 } from '../core/presets';
 import { downloadText } from '../lib/download';
 import { useStore } from '../store/useStore';
+import { NumberInput } from './ui';
 
 interface PresetBarProps {
   onPresetApplied: () => void;
@@ -20,14 +21,6 @@ type Notice = {
 } | null;
 
 const MAX_SEED = 1_000_000_000;
-
-const clampSeed = (value: string, fallback: number): number => {
-  const parsed = Number.parseInt(value, 10);
-
-  if (Number.isNaN(parsed)) return fallback;
-
-  return Math.min(MAX_SEED, Math.max(0, parsed));
-};
 
 export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
   const {
@@ -124,8 +117,8 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
     }
   };
 
-  const updateSeed = (value: string) => {
-    updateSettings({ seed: clampSeed(value, settings.seed) });
+  const updateSeed = (seed: number) => {
+    updateSettings({ seed });
   };
 
   const randomizeSeed = () => {
@@ -175,13 +168,14 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
         >
           Seed
         </label>
-        <input
+        <NumberInput
           id="preset-seed"
-          type="number"
+          variant="bare"
           min={0}
           max={MAX_SEED}
+          integer
           value={settings.seed}
-          onChange={(event) => updateSeed(event.target.value)}
+          onValueChange={updateSeed}
           className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm font-bold text-indigo-400 text-center outline-none"
         />
         <button
