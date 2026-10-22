@@ -38,8 +38,8 @@ export const BrandPriceEditor: React.FC<BrandPriceEditorProps> = ({ brand }) => 
   };
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-700/20 pt-2 pb-2">
-      <span className="text-xs font-bold text-slate-400">
+    <div className="flex items-center justify-between border-t border-border pt-2 pb-2">
+      <span className="text-xs font-semibold text-muted">
         Brand Price Range
       </span>
 
@@ -53,9 +53,9 @@ export const BrandPriceEditor: React.FC<BrandPriceEditorProps> = ({ brand }) => 
               aria-label={`Minimum price for ${brand.name}`}
               value={min}
               onValueChange={setMin}
-              className="w-16 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200"
+              className="w-16 border border-border bg-surface px-2 py-1 text-xs text-text"
             />
-            <span className="text-slate-500">-</span>
+            <span className="text-muted">-</span>
             <NumberInput
               variant="bare"
               min={0}
@@ -63,7 +63,7 @@ export const BrandPriceEditor: React.FC<BrandPriceEditorProps> = ({ brand }) => 
               aria-label={`Maximum price for ${brand.name}`}
               value={max}
               onValueChange={setMax}
-              className="w-16 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200"
+              className="w-16 border border-border bg-surface px-2 py-1 text-xs text-text"
             />
             <IconButton
               variant="success"
@@ -82,7 +82,7 @@ export const BrandPriceEditor: React.FC<BrandPriceEditorProps> = ({ brand }) => 
           </>
         ) : brand.priceRange ? (
           <>
-            <span className="text-xs text-indigo-400">
+            <span className="text-xs text-accent">
               ${brand.priceRange.min}-${brand.priceRange.max}
             </span>
             <IconButton
@@ -104,7 +104,7 @@ export const BrandPriceEditor: React.FC<BrandPriceEditorProps> = ({ brand }) => 
             variant="plain"
             size="sm"
             onClick={startEditing}
-            className="px-1 py-0 text-xs text-slate-500 hover:text-indigo-400"
+            className="px-1 py-0 text-xs text-muted hover:text-accent"
           >
             + Set price
           </Button>

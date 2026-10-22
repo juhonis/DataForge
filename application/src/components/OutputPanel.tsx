@@ -137,22 +137,22 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
       : 'Ready to Generate';
 
   return (
-    <div className="flex-1 overflow-hidden bg-slate-950 p-3 sm:p-4 lg:p-6">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-800/30 px-4 py-3 lg:px-6">
+    <div className="flex-1 overflow-hidden bg-canvas p-3 sm:p-4 lg:p-6">
+      <div className="flex h-full flex-col overflow-hidden border border-border bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3 lg:px-6">
           <div className="flex items-center gap-2">
             <div
               className={`h-2 w-2 rounded-full ${
                 isLoadingPreview
-                  ? 'animate-pulse bg-amber-400'
+                  ? 'animate-pulse bg-warning'
                   : products.length > 0
                     ? isPreviewMode
-                      ? 'animate-pulse bg-amber-500'
-                      : 'bg-emerald-500'
-                    : 'bg-slate-600'
+                      ? 'animate-pulse bg-warning'
+                      : 'bg-success'
+                    : 'bg-muted'
               }`}
             />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
               {statusText}
             </span>
           </div>
@@ -162,7 +162,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               label="Copy active dataset as JSON"
               onClick={copyToClipboard}
               disabled={activeRows.length === 0}
-              className="hover:bg-slate-700"
+              className="hover:bg-border"
             >
               <Copy className="h-4 w-4" />
             </IconButton>
@@ -170,7 +170,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               label="Download active dataset as CSV"
               onClick={downloadCsv}
               disabled={activeRows.length === 0}
-              className="hover:bg-slate-700"
+              className="hover:bg-border"
             >
               <FileSpreadsheet className="h-4 w-4" />
             </IconButton>
@@ -178,7 +178,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               label="Download full dataset as JSON"
               onClick={downloadJson}
               disabled={!dataset}
-              className="hover:bg-slate-700"
+              className="hover:bg-border"
             >
               <FileJson className="h-4 w-4" />
             </IconButton>
@@ -189,7 +189,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
                 onSqlDialectChange(event.target.value as SqlDialect)
               }
               aria-label="SQL dialect"
-              className="rounded-lg border border-slate-700 bg-slate-800 px-1.5 py-1.5 text-[10px] font-bold uppercase text-slate-400"
+              className="border border-border bg-surface-muted px-1.5 py-1.5 text-[10px] font-semibold uppercase text-muted"
             >
               <option value="postgres">Postgres</option>
               <option value="mysql">MySQL</option>
@@ -198,7 +198,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               label="Download full dataset as SQL"
               onClick={downloadSql}
               disabled={!dataset}
-              className="hover:bg-slate-700"
+              className="hover:bg-border"
             >
               <FileCode2 className="h-4 w-4" />
             </IconButton>
@@ -208,7 +208,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
         <div
           role="tablist"
           aria-label="Dataset tables"
-          className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-slate-900/40 px-4 py-2 lg:px-6"
+          className="flex items-center gap-1 overflow-x-auto border-b border-border bg-surface-muted px-4 py-2 lg:px-6"
         >
           {DATASET_TABS.map((tab) => {
             const rows = dataset?.[tab.key];
@@ -248,39 +248,34 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
                       ?.focus();
                   }
                 }}
-                className={`whitespace-nowrap rounded-lg ${
+                className={`whitespace-nowrap ${
                   selected
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:bg-border hover:text-text'
                 }`}
               >
                 {tab.label}
-                <Badge
-                  tone={selected ? 'indigo' : 'slate'}
-                  className={selected ? 'bg-indigo-500/60' : ''}
-                >
-                  {rows?.length ?? 0}
-                </Badge>
+                <Badge tone="neutral">{rows?.length ?? 0}</Badge>
               </Button>
             );
           })}
         </div>
 
         {stats && !isPreviewMode && (
-          <div className="border-b border-slate-800 bg-slate-800/20 px-4 py-3 lg:px-6">
+          <div className="border-b border-border bg-surface-muted px-4 py-3 lg:px-6">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">Price Range:</span>
-                <span className="font-bold text-indigo-400">
+                <span className="text-muted">Price Range:</span>
+                <span className="font-semibold text-accent">
                   ${stats.minPrice} - ${stats.maxPrice}
                 </span>
-                <span className="text-slate-600">
+                <span className="text-muted">
                   (avg ${stats.avgPrice})
                 </span>
               </div>
-              <div className="hidden h-4 w-px bg-slate-700 sm:block" />
+              <div className="hidden h-4 w-px bg-border sm:block" />
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-slate-500">Brands:</span>
+                <span className="text-muted">Brands:</span>
                 {Object.entries(stats.brandCounts).map(([brand, count]) => (
                   <Badge key={brand}>
                     {brand}: {count}
@@ -301,8 +296,8 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
             <div className="relative">
               {isPreviewMode && activeTab === 'products' && (
                 <Badge
-                  tone="amber"
-                  className="absolute -left-2 -top-2 gap-1.5 border border-amber-500/50 px-3 py-1 uppercase tracking-wider"
+                  tone="warning"
+                  className="absolute -left-2 -top-2 gap-1.5 border border-warning/50 px-3 py-1 uppercase tracking-wider"
                 >
                   <Sparkles className="h-3 w-3" />
                   Live Preview
@@ -310,14 +305,14 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
               )}
               <pre
                 className={`whitespace-pre-wrap ${
-                  isPreviewMode ? 'text-amber-400/90' : 'text-emerald-400/90'
+                  isPreviewMode ? 'text-warning' : 'text-success'
                 }`}
               >
                 {toJson(activeRows)}
               </pre>
             </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center space-y-4 text-slate-700">
+            <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted">
               <Database className="h-12 w-12 opacity-10" />
               <div className="text-center">
                 <p className="mb-2 text-sm font-medium uppercase tracking-widest opacity-40">
@@ -325,7 +320,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
                     ? `No ${activeTabLabel} Data`
                     : 'Select Brands to Preview'}
                 </p>
-                <p className="max-w-xs text-xs text-slate-600">
+                <p className="max-w-xs text-xs text-muted">
                   {dataset
                     ? 'Generate a full dataset to populate this tab.'
                     : 'Select brands in the sidebar to see a live preview of your product configuration'}

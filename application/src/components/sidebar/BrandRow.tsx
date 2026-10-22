@@ -74,10 +74,10 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
 
   return (
     <div
-      className={`rounded-lg border transition-all ${
+      className={`border transition-colors ${
         selected
-          ? 'border-indigo-500/50 bg-slate-800/30'
-          : 'border-slate-700/50 bg-slate-800/20'
+          ? 'border-accent/50 bg-accent-muted'
+          : 'border-border bg-surface-muted'
       }`}
     >
       <div className="flex items-center gap-2 p-3">
@@ -98,7 +98,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                 if (event.key === 'Escape') setEditingName(false);
               }}
               aria-label={`Brand name for ${brand.name}`}
-              className="min-w-0 flex-1 rounded border border-indigo-500 bg-slate-950 px-2 py-1 text-sm text-slate-200"
+              className="min-w-0 flex-1 border border-accent bg-surface px-2 py-1 text-sm text-text"
             />
             <IconButton
               variant="success"
@@ -117,12 +117,12 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
           </div>
         ) : (
           <>
-            <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-300">
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text">
               {brand.name}
             </span>
             <Badge
               tone={
-                brand.selectedModels.length > 0 ? 'indigo' : 'slate'
+                brand.selectedModels.length > 0 ? 'accent' : 'neutral'
               }
             >
               {brand.selectedModels.length}/{brand.models.length} models
@@ -130,7 +130,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
             <IconButton
               label={`Rename brand ${brand.name}`}
               onClick={startEditingName}
-              className="hover:bg-slate-700"
+              className="hover:bg-border"
             >
               <Edit3 className="h-3.5 w-3.5" />
             </IconButton>
@@ -162,12 +162,12 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
       {expanded && (
         <div
           id={contentId}
-          className="border-t border-slate-700/30 px-3 pb-3"
+          className="border-t border-border px-3 pb-3"
         >
           <div className="flex items-center justify-between pb-2 pt-3">
             <label
               htmlFor={`brand-weight-${brand.id}`}
-              className="text-xs font-bold text-slate-400"
+              className="text-xs font-semibold text-muted"
             >
               Selection Weight
             </label>
@@ -179,14 +179,14 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
               step={0.1}
               value={brand.weight ?? 1}
               onValueChange={(weight) => updateBrandWeight(brand.id, weight)}
-              className="w-16 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-right text-xs text-slate-200"
+              className="w-16 border border-border bg-surface px-2 py-1 text-right text-xs text-text"
             />
           </div>
 
           <BrandPriceEditor brand={brand} />
 
-          <div className="flex items-center justify-between border-t border-slate-700/20 pb-1 pt-2">
-            <span className="text-xs font-bold text-slate-400">
+          <div className="flex items-center justify-between border-t border-border pb-1 pt-2">
+            <span className="text-xs font-semibold text-muted">
               Select Models ({brand.selectedModels.length}/
               {brand.models.length})
             </span>
@@ -195,16 +195,16 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                 variant="plain"
                 size="sm"
                 onClick={() => selectAllBrandModels(brand.id)}
-                className="px-1.5 py-0.5 text-[10px] text-indigo-400 hover:text-indigo-300"
+                className="px-1.5 py-0.5 text-[10px] text-accent hover:text-accent-hover"
               >
                 All
               </Button>
-              <span className="text-slate-600">|</span>
+              <span className="text-border">|</span>
               <Button
                 variant="plain"
                 size="sm"
                 onClick={() => deselectAllBrandModels(brand.id)}
-                className="px-1.5 py-0.5 text-[10px] text-slate-500 hover:text-slate-300"
+                className="px-1.5 py-0.5 text-[10px] text-muted hover:text-text"
               >
                 None
               </Button>
@@ -219,7 +219,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                 ))}
               </div>
             ) : (
-              <div className="py-2 text-xs italic text-slate-500">
+              <div className="py-2 text-xs italic text-muted">
                 No models defined
               </div>
             )}
@@ -242,7 +242,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                   label={`Add model to ${brand.name}`}
                   onClick={addModel}
                   disabled={!newModelName.trim()}
-                  className="bg-emerald-600 text-white hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600"
+                  className="bg-success text-on-success hover:bg-success-hover disabled:bg-surface-muted disabled:text-muted"
                 >
                   <Save className="h-4 w-4" />
                 </IconButton>
@@ -250,7 +250,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                   variant="plain"
                   label={`Cancel adding model to ${brand.name}`}
                   onClick={cancelAddModel}
-                  className="bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  className="bg-surface-muted text-text hover:bg-border"
                 >
                   <X className="h-4 w-4" />
                 </IconButton>
@@ -260,7 +260,7 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
                 variant="plain"
                 size="sm"
                 onClick={() => setAddingModel(true)}
-                className="mt-2 px-3 py-1.5 text-xs text-indigo-400 hover:text-indigo-300"
+                className="mt-2 px-3 py-1.5 text-xs text-accent hover:text-accent-hover"
               >
                 <Plus className="h-3 w-3" />
                 Add Model

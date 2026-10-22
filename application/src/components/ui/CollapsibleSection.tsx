@@ -23,7 +23,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   badge,
   className,
 }) => (
-  <section className={cn('border-b border-slate-800', className)}>
+  <section className={cn('border-b border-border', className)}>
     <h2>
       <button
         id={`${id}-trigger`}
@@ -31,21 +31,21 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         aria-expanded={expanded}
         aria-controls={`${id}-content`}
         onClick={onToggle}
-        className="flex w-full items-center gap-2 px-5 py-3 text-left transition-colors hover:bg-slate-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400"
+        className="flex w-full items-center gap-2 px-5 py-3 text-left transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
       >
         {icon && (
-          <span className="shrink-0 text-slate-500" aria-hidden>
+          <span className="shrink-0 text-muted" aria-hidden>
             {icon}
           </span>
         )}
-        <span className="min-w-0 flex-1 text-xs font-bold uppercase tracking-wider text-slate-300">
+        <span className="min-w-0 flex-1 text-xs font-semibold uppercase tracking-wider text-text">
           {title}
         </span>
         {badge}
         <ChevronDown
           aria-hidden
           className={cn(
-            'h-4 w-4 shrink-0 text-slate-500 transition-transform',
+            'h-4 w-4 shrink-0 text-muted transition-transform',
             expanded && 'rotate-180',
           )}
         />

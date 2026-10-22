@@ -132,10 +132,10 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 lg:px-6 py-2 border-b border-slate-800 bg-slate-900/30 shrink-0">
-      <div className="flex items-center gap-1.5 text-slate-500">
-        <Layers className="w-4 h-4" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+    <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-surface px-4 py-2 lg:px-6">
+      <div className="flex items-center gap-1.5 text-muted">
+        <Layers className="h-4 w-4" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">
           Presets
         </span>
       </div>
@@ -146,7 +146,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
           value={presetId}
           onChange={(event) => setPresetId(event.target.value)}
           aria-label="Bundled preset"
-          className="max-w-[180px] rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-slate-300"
+          className="max-w-[180px] border border-border bg-surface-muted px-2 py-1.5 text-xs text-text"
         >
           {BUNDLED_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
@@ -163,12 +163,12 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
         </Button>
       </div>
 
-      <div className="h-5 w-px bg-slate-800 hidden sm:block" />
+      <div className="hidden h-5 w-px bg-border sm:block" />
 
       <div className="flex items-center gap-1.5">
         <label
           htmlFor="preset-seed"
-          className="text-[10px] font-bold uppercase text-slate-500"
+          className="text-[10px] font-semibold uppercase text-muted"
         >
           Seed
         </label>
@@ -180,7 +180,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
           integer
           value={settings.seed}
           onValueChange={updateSeed}
-          className="w-20 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm font-bold text-indigo-400 text-center outline-none"
+          className="w-20 border border-border bg-surface-muted px-2 py-1 text-center text-sm font-semibold text-accent outline-none"
         />
         <IconButton label="Randomize seed" onClick={randomizeSeed}>
           <Dices className="h-4 w-4" />
@@ -230,7 +230,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
           role="status"
           aria-live="polite"
           className={`w-full lg:w-auto text-xs ${
-            notice.tone === 'error' ? 'text-red-400' : 'text-emerald-400'
+            notice.tone === 'error' ? 'text-danger' : 'text-success'
           }`}
         >
           {notice.text}

@@ -22,12 +22,12 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       {...props}
       aria-invalid={invalid || undefined}
       className={cn(
-        'outline-none transition focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:cursor-not-allowed disabled:opacity-50',
+        'outline-none transition focus-visible:ring-2 focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-50',
         variant === 'default' &&
-          'w-full rounded-lg border bg-slate-800 px-3 py-2 text-sm text-slate-300',
+          'w-full border bg-surface px-3 py-2 text-sm text-text',
         variant === 'default' &&
-          (invalid ? 'border-red-500' : 'border-slate-700'),
-        variant === 'bare' && 'bg-transparent text-sm text-slate-300',
+          (invalid ? 'border-danger' : 'border-border'),
+        variant === 'bare' && 'text-sm text-text',
         className,
       )}
     />

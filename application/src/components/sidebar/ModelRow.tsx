@@ -56,7 +56,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
   };
 
   return (
-    <div className="group flex items-start gap-2 rounded-lg p-1.5 transition-colors hover:bg-slate-800/50">
+    <div className="group flex items-start gap-2 p-1.5 transition-colors hover:bg-surface-muted">
       <Checkbox
         checked={selected}
         onChange={() => toggleBrandModel(brand.id, model)}
@@ -76,7 +76,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
                 if (event.key === 'Escape') setEditingName(false);
               }}
               aria-label={`Model name for ${model}`}
-              className="min-w-0 flex-1 rounded border border-indigo-500 bg-slate-950 px-2 py-1 text-sm text-slate-200"
+              className="min-w-0 flex-1 border border-accent bg-surface px-2 py-1 text-sm text-text"
             />
             <IconButton
               variant="success"
@@ -98,8 +98,8 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
             type="button"
             onClick={startEditingName}
             aria-label={`Rename model ${model}`}
-            className={`block max-w-full truncate text-left text-sm transition-colors hover:text-indigo-300 ${
-              selected ? 'text-slate-300' : 'text-slate-500'
+            className={`block max-w-full truncate text-left text-sm transition-colors hover:text-accent ${
+              selected ? 'text-text' : 'text-muted'
             }`}
           >
             {model}
@@ -108,14 +108,14 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
 
         {editingPrice ? (
           <div className="mt-1 flex items-center gap-1">
-            <span className="text-xs text-slate-500">$</span>
+            <span className="text-xs text-muted">$</span>
             <NumberInput
               variant="bare"
               min={0}
               value={price}
               onValueChange={setPrice}
               aria-label={`Exact price for ${brand.name} ${model}`}
-              className="w-20 rounded border border-indigo-500 bg-slate-950 px-1.5 py-0.5 text-xs text-slate-200"
+              className="w-20 border border-accent bg-surface px-1.5 py-0.5 text-xs text-text"
             />
             <IconButton
               variant="success"
@@ -134,7 +134,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
           </div>
         ) : exactPrice ? (
           <div className="mt-0.5 flex items-center gap-1">
-            <Badge tone="amber">${exactPrice}</Badge>
+            <Badge tone="warning">${exactPrice}</Badge>
             <IconButton
               label={`Edit exact price for ${model}`}
               onClick={startEditingPrice}
@@ -154,7 +154,7 @@ export const ModelRow: React.FC<ModelRowProps> = ({ brand, model }) => {
             variant="plain"
             size="sm"
             onClick={startEditingPrice}
-            className="mt-0.5 px-0 py-0 text-[10px] text-slate-600 hover:text-indigo-400"
+            className="mt-0.5 px-0 py-0 text-[10px] text-muted hover:text-accent"
           >
             + Set price
           </Button>

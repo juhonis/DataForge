@@ -50,7 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           type="button"
           aria-label="Close product configuration"
           onClick={onClose}
-          className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-overlay lg:hidden"
         />
       )}
 
@@ -59,15 +59,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         aria-label="Product configuration"
         className={`${
           isOpen ? 'flex' : 'hidden'
-        } fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] shrink-0 flex-col overflow-hidden border-r border-slate-800 bg-slate-900 lg:static lg:z-auto lg:flex lg:w-[380px] lg:min-w-[380px] xl:w-1/2 xl:min-w-[560px]`}
+        } fixed inset-y-0 left-0 z-40 w-80 max-w-[85vw] shrink-0 flex-col overflow-hidden border-r border-border bg-surface lg:static lg:z-auto lg:flex lg:w-[380px] lg:min-w-[380px] xl:w-1/2 xl:min-w-[560px]`}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/50 p-5">
-          <h2 className="flex min-w-0 items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400">
-            <Package className="h-4 w-4 shrink-0 text-indigo-500" />
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-muted p-5">
+          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold uppercase tracking-widest text-muted">
+            <Package className="h-4 w-4 shrink-0 text-accent" />
             <span className="truncate">Product Configuration</span>
           </h2>
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-xs text-slate-500">
+            <span className="truncate text-xs text-muted">
               {selectedCategory.name}
             </span>
             <IconButton
