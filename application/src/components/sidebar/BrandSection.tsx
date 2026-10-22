@@ -61,14 +61,14 @@ export const BrandSection: React.FC<BrandSectionProps> = ({
             label="Add brand"
             onClick={handleAddBrand}
             disabled={!newBrandName.trim()}
-            className="bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600"
+            className="bg-accent text-on-accent hover:bg-accent-hover disabled:bg-surface-muted disabled:text-muted"
           >
             <Plus className="h-4 w-4" />
           </IconButton>
         </div>
 
         <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-500">
+          <span className="text-muted">
             {selectedBrands.length} of {brands.length} selected
           </span>
           <div className="flex items-center gap-1">
@@ -76,25 +76,25 @@ export const BrandSection: React.FC<BrandSectionProps> = ({
               variant="plain"
               size="sm"
               onClick={selectAllBrands}
-              className="px-1 py-0.5 text-indigo-400 hover:text-indigo-300"
+              className="px-1 py-0.5 text-accent hover:text-accent-hover"
             >
               All
             </Button>
-            <span className="text-slate-600">|</span>
+            <span className="text-border">|</span>
             <Button
               variant="plain"
               size="sm"
               onClick={deselectAllBrands}
-              className="px-1 py-0.5 text-slate-500 hover:text-slate-300"
+              className="px-1 py-0.5 text-muted hover:text-text"
             >
               None
             </Button>
-            <span className="text-slate-600">|</span>
+            <span className="text-border">|</span>
             <Button
               variant="plain"
               size="sm"
               onClick={resetBrands}
-              className="flex items-center gap-1 px-1 py-0.5 text-slate-500 hover:text-slate-300"
+              className="flex items-center gap-1 px-1 py-0.5 text-muted hover:text-text"
             >
               <RefreshCw className="h-3 w-3" />
               Reset

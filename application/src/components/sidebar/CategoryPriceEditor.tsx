@@ -35,14 +35,14 @@ export const CategoryPriceEditor: React.FC<CategoryPriceEditorProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-3">
+    <div className="border border-border bg-surface-muted p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-300">Price Range</span>
+        <span className="text-xs font-semibold text-text">Price Range</span>
         {!editing && (
           <IconButton
             label="Edit category price range"
             onClick={startEditing}
-            className="hover:bg-slate-700"
+            className="hover:bg-border"
           >
             <Edit3 className="h-3.5 w-3.5" />
           </IconButton>
@@ -90,7 +90,7 @@ export const CategoryPriceEditor: React.FC<CategoryPriceEditorProps> = ({
           </div>
         </div>
       ) : (
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-muted">
           ${priceRange.min} - ${priceRange.max}
         </div>
       )}

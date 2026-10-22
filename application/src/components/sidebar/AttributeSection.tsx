@@ -58,7 +58,7 @@ export const AttributeSection: React.FC<AttributeSectionProps> = ({
     >
       <div className="space-y-3">
         {adding ? (
-          <div className="space-y-2 rounded-lg border border-slate-700/50 bg-slate-800/50 p-3">
+          <div className="space-y-2 border border-border bg-surface-muted p-3">
             <Field label="Attribute Key" htmlFor="new-attribute-key">
               <Input
                 id="new-attribute-key"
@@ -94,9 +94,9 @@ export const AttributeSection: React.FC<AttributeSectionProps> = ({
           </div>
         ) : (
           <Button
-            variant="secondary"
+            variant="plain"
             onClick={() => setAdding(true)}
-            className="w-full border border-dashed border-slate-600 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300"
+            className="w-full border border-dashed border-border bg-surface text-muted hover:bg-surface-muted hover:text-text"
           >
             <Plus className="h-4 w-4" />
             Add Attribute

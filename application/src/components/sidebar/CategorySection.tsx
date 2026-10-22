@@ -91,7 +91,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
         </Field>
 
         {editing ? (
-          <div className="space-y-3 rounded-lg border border-slate-700/50 bg-slate-800/50 p-3">
+          <div className="space-y-3 border border-border bg-surface-muted p-3">
             <Field label="Category Name" htmlFor="edit-category-name">
               <Input
                 id="edit-category-name"
@@ -163,17 +163,17 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="mb-1 text-[10px] font-bold uppercase text-slate-500">
+                <div className="mb-1 text-[10px] font-semibold uppercase text-muted">
                   SKU Prefix
                 </div>
-                <div className="rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-sm text-indigo-400">
+                <div className="border border-border bg-surface px-3 py-1.5 font-mono text-sm text-accent">
                   {selectedCategory.skuPrefix}-
                 </div>
               </div>
               <IconButton
                 label="Edit category settings"
                 onClick={startEditing}
-                className="hover:bg-slate-700"
+                className="hover:bg-surface-muted"
               >
                 <Settings2 className="h-4 w-4" />
               </IconButton>

@@ -24,7 +24,7 @@ export const Field: React.FC<FieldProps> = ({
     <label
       htmlFor={htmlFor}
       className={cn(
-        'block text-[10px] font-bold uppercase tracking-wide text-slate-500',
+        'block text-[10px] font-semibold uppercase tracking-wide text-muted',
         labelClassName,
       )}
     >
@@ -32,10 +32,10 @@ export const Field: React.FC<FieldProps> = ({
     </label>
     {children}
     {hint && !error && (
-      <p className="text-[11px] leading-relaxed text-slate-500">{hint}</p>
+      <p className="text-[11px] leading-relaxed text-muted">{hint}</p>
     )}
     {error && (
-      <p role="alert" className="text-[11px] leading-relaxed text-red-400">
+      <p role="alert" className="text-[11px] leading-relaxed text-danger">
         {error}
       </p>
     )}

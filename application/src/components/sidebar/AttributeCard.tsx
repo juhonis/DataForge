@@ -96,7 +96,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-slate-700/50 bg-slate-800/50 p-3 transition-colors hover:border-slate-600">
+    <div className="border border-border bg-surface-muted p-3 transition-colors hover:border-muted">
       {editing ? (
         <div className="space-y-3">
           <Field label="Key" htmlFor={`attribute-key-${attribute.key}`}>
@@ -108,7 +108,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
           </Field>
 
           <div>
-            <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+            <span className="mb-1 block text-[10px] font-semibold uppercase text-muted">
               Type
             </span>
             <div
@@ -163,14 +163,14 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
 
           {(type === 'select' || attribute.type === 'select') && (
             <div>
-              <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+              <span className="mb-1 block text-[10px] font-semibold uppercase text-muted">
                 Options
               </span>
               <div className="mb-2 flex flex-wrap gap-1">
                 {attribute.options?.map((option) => (
                   <span
                     key={String(option)}
-                    className="inline-flex items-center gap-1 rounded bg-slate-700/50 px-2 py-1 text-xs text-slate-300"
+                    className="inline-flex items-center gap-1 bg-surface px-2 py-1 text-xs text-text"
                   >
                     {String(option)}
                     <IconButton
@@ -183,7 +183,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
                           String(option),
                         )
                       }
-                      className="p-0 text-slate-400 hover:text-red-400"
+                      className="p-0 text-muted hover:text-danger"
                     >
                       <X className="h-3 w-3" />
                     </IconButton>
@@ -206,7 +206,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
                   label={`Add option to ${attribute.key}`}
                   onClick={addOption}
                   disabled={!newOption.trim()}
-                  className="bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  className="bg-surface text-text hover:bg-border"
                 >
                   <Plus className="h-4 w-4" />
                 </IconButton>
@@ -238,7 +238,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <div>
-              <div className="text-sm font-bold capitalize text-slate-300">
+              <div className="text-sm font-semibold capitalize text-text">
                 {attribute.key}
               </div>
               <Badge className="mt-1">{attribute.type}</Badge>
@@ -247,7 +247,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
               <IconButton
                 label={`Edit attribute ${attribute.key}`}
                 onClick={startEditing}
-                className="hover:bg-slate-700"
+                className="hover:bg-border"
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </IconButton>
@@ -266,7 +266,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
             attribute.options.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {attribute.options.map((option) => (
-                  <Badge key={String(option)} tone="indigo">
+                  <Badge key={String(option)} tone="accent">
                     {String(option)}
                   </Badge>
                 ))}
@@ -274,7 +274,7 @@ export const AttributeCard: React.FC<AttributeCardProps> = ({
             )}
 
           {attribute.type === 'number' && (
-            <div className="text-[10px] text-slate-500">
+            <div className="text-[10px] text-muted">
               Range: {attribute.min ?? 0} - {attribute.max ?? 100}
             </div>
           )}

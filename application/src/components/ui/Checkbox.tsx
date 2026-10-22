@@ -31,23 +31,23 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         />
         <span
           aria-hidden
-          className="h-5 w-5 rounded border border-slate-600 bg-slate-900 transition-colors peer-checked:border-indigo-500 peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-900"
+          className="h-5 w-5 border border-border bg-surface transition-colors peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"
         />
         <Check
           aria-hidden
           strokeWidth={3}
-          className="pointer-events-none absolute inset-0 m-auto h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+          className="pointer-events-none absolute inset-0 m-auto h-3 w-3 text-on-accent opacity-0 transition-opacity peer-checked:opacity-100"
         />
       </span>
       {(label || description) && (
         <span className="min-w-0">
           {label && (
-            <span className="block text-sm leading-5 text-slate-300">
+            <span className="block text-sm leading-5 text-text">
               {label}
             </span>
           )}
           {description && (
-            <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">
+            <span className="mt-0.5 block text-xs leading-relaxed text-muted">
               {description}
             </span>
           )}

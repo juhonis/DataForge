@@ -22,13 +22,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       {...props}
       aria-invalid={invalid || undefined}
       className={cn(
-        'outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:cursor-not-allowed disabled:opacity-50',
+        'outline-none transition placeholder:text-muted focus-visible:ring-2 focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-50',
         variant === 'default' &&
-          'w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-200',
+          'w-full border bg-surface px-3 py-2 text-sm text-text',
         variant === 'default' &&
-          (invalid
-            ? 'border-red-500 focus-visible:ring-red-400/60'
-            : 'border-slate-700'),
+          (invalid ? 'border-danger focus-visible:ring-danger/60' : 'border-border'),
         className,
       )}
     />

@@ -1,57 +1,140 @@
 @import "tailwindcss";
 
 :root {
+  --df-canvas: #f6f7f9;
+  --df-surface: #ffffff;
+  --df-surface-muted: #eef1f4;
+  --df-border: #dce1e7;
+  --df-text: #141a22;
+  --df-muted: #5f6b7a;
+  --df-accent: #1d4ed8;
+  --df-accent-hover: #1e40af;
+  --df-accent-muted: #e8eefc;
+  --df-on-accent: #ffffff;
+  --df-success: #067647;
+  --df-success-hover: #05603a;
+  --df-success-muted: #dcfae6;
+  --df-on-success: #ffffff;
+  --df-warning: #b54708;
+  --df-warning-hover: #93370d;
+  --df-warning-muted: #fef0c7;
+  --df-danger: #b42318;
+  --df-danger-hover: #912018;
+  --df-danger-muted: #fee4e2;
+  --df-on-danger: #ffffff;
+  --df-overlay: rgba(20, 26, 34, 0.35);
+
+  color-scheme: light;
   height: 100%;
 }
 
+[data-theme="dark"] {
+  --df-canvas: #0b0f14;
+  --df-surface: #121820;
+  --df-surface-muted: #18212c;
+  --df-border: #25303d;
+  --df-text: #e7edf5;
+  --df-muted: #98a6b8;
+  --df-accent: #5b9dff;
+  --df-accent-hover: #7db2ff;
+  --df-accent-muted: #142642;
+  --df-on-accent: #08111f;
+  --df-success: #3ccb7f;
+  --df-success-hover: #62d99a;
+  --df-success-muted: #102d21;
+  --df-on-success: #04140c;
+  --df-warning: #f0b35a;
+  --df-warning-hover: #f4c47c;
+  --df-warning-muted: #382915;
+  --df-danger: #f97066;
+  --df-danger-hover: #fb958e;
+  --df-danger-muted: #3a1a17;
+  --df-on-danger: #1a0806;
+  --df-overlay: rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--df-canvas);
+  --color-surface: var(--df-surface);
+  --color-surface-muted: var(--df-surface-muted);
+  --color-border: var(--df-border);
+  --color-text: var(--df-text);
+  --color-muted: var(--df-muted);
+  --color-accent: var(--df-accent);
+  --color-accent-hover: var(--df-accent-hover);
+  --color-accent-muted: var(--df-accent-muted);
+  --color-on-accent: var(--df-on-accent);
+  --color-success: var(--df-success);
+  --color-success-hover: var(--df-success-hover);
+  --color-success-muted: var(--df-success-muted);
+  --color-on-success: var(--df-on-success);
+  --color-warning: var(--df-warning);
+  --color-warning-hover: var(--df-warning-hover);
+  --color-warning-muted: var(--df-warning-muted);
+  --color-danger: var(--df-danger);
+  --color-danger-hover: var(--df-danger-hover);
+  --color-danger-muted: var(--df-danger-muted);
+  --color-on-danger: var(--df-on-danger);
+  --color-overlay: var(--df-overlay);
+
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+  --radius: 0px;
+}
+
 body {
-  @apply bg-slate-950 text-white antialiased overflow-hidden;
+  background-color: var(--df-canvas);
+  color: var(--df-text);
+  -webkit-font-smoothing: antialiased;
   height: 100%;
+  overflow: hidden;
 }
 
 #root {
   height: 100%;
 }
 
+button,
+input,
+optgroup,
+select,
+textarea {
+  border-radius: 0;
+}
+
 /* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-color: var(--df-border) transparent;
+  scrollbar-width: thin;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: 4px;
+  background: var(--df-surface-muted);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.8);
-  border-radius: 4px;
+  background: var(--df-border);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.9);
-}
-
-/* JSON Syntax Highlighting */
-.json-key {
-  color: #a5b4fc;
-}
-
-.json-string {
-  color: #86efac;
-}
-
-.json-number {
-  color: #fbbf24;
-}
-
-.json-boolean {
-  color: #c084fc;
+  background: var(--df-muted);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(99, 102, 241, 0.3);
-  color: inherit;
+  background: var(--df-accent-muted);
+  color: var(--df-text);
 }

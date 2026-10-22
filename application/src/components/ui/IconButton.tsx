@@ -18,14 +18,14 @@ export interface IconButtonProps
 
 const variantClasses: Record<IconButtonVariant, string> = {
   ghost:
-    'text-slate-500 hover:bg-slate-800 hover:text-indigo-400 focus-visible:ring-indigo-400',
+    'text-muted hover:bg-surface-muted hover:text-accent focus-visible:ring-accent',
   primary:
-    'text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 focus-visible:ring-indigo-400',
+    'text-accent hover:bg-accent-muted hover:text-accent-hover focus-visible:ring-accent',
   plain: '',
   success:
-    'text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 focus-visible:ring-emerald-400',
+    'text-success hover:bg-success-muted hover:text-success-hover focus-visible:ring-success',
   danger:
-    'text-slate-500 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-red-400',
+    'text-muted hover:bg-danger-muted hover:text-danger focus-visible:ring-danger',
 };
 
 const sizeClasses: Record<IconButtonSize, string> = {
@@ -55,7 +55,7 @@ export const IconButton = React.forwardRef<
       title={title ?? label}
       aria-label={label}
       className={cn(
-        'inline-flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
         variantClasses[variant],
         sizeClasses[size],
         className,
