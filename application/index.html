@@ -1,7 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="UTF-8" />
+		<script>
+			try {
+				if (localStorage.getItem('dataforge-theme') === 'dark') {
+					document.documentElement.dataset.theme = 'dark'
+				}
+			} catch {}
+		</script>
 		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>application</title>

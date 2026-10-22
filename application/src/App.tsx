@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, Package, Play, Trash2 } from 'lucide-react';
+import { Menu, Moon, Package, Play, Sun, Trash2 } from 'lucide-react';
 import { OutputPanel, type DatasetTab } from './components/OutputPanel';
 import { PresetBar } from './components/PresetBar';
 import { Sidebar } from './components/sidebar/Sidebar';
@@ -8,6 +8,11 @@ import { generateDataset } from './core/generate';
 import { generateProducts } from './core/generate/product';
 import type { SqlDialect } from './core/exporters/sql';
 import { SeededRng } from './core/rng';
+import {
+  initializeTheme,
+  setTheme,
+  type Theme,
+} from './lib/theme';
 import { useStore } from './store/useStore';
 
 function App() {
@@ -25,6 +30,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(initializeTheme);
 
   const prevConfigRef = useRef('');
 
@@ -139,6 +145,13 @@ function App() {
   const handlePresetApplied = () => {
     setIsPreviewMode(true);
     setActiveTab('products');
+  };
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+
+    setTheme(nextTheme);
+    setThemeState(nextTheme);
   };
 
   const updateCustomerCount = (customerCount: number) => {
@@ -311,6 +324,23 @@ function App() {
           <div className="hidden h-6 w-px bg-border sm:block lg:h-8" />
 
           <div className="flex items-center gap-2">
+            <IconButton
+              label={
+                theme === 'dark'
+                  ? 'Switch to light theme'
+                  : 'Switch to dark theme'
+              }
+              aria-pressed={theme === 'dark'}
+              onClick={toggleTheme}
+              className="border border-border bg-surface"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </IconButton>
+
             {!isPreviewMode && (
               <Button
                 variant="plain"

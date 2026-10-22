@@ -506,9 +506,9 @@ Define the same semantic token names under a `[data-theme='dark']` scope:
 | `warning` | `#F0B35A` |
 | `danger` | `#F97066` |
 
-Only add a visible theme toggle and persisted preference if the light theme is
-reviewed and dark graphite is selected. Do not implement two full visual QA
-passes in the initial redesign.
+Light neutral remains the default for first-time users. After review, a
+visible light/dark toggle is included, and the selected theme persists in local
+storage.
 
 #### Token architecture
 
