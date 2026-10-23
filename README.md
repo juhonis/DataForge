@@ -11,6 +11,15 @@ and database experiments. Pick a category, tune its catalog and generation
 settings, then export a coherent relational dataset as JSON, CSV, or SQL. No
 backend, account, or upload is involved.
 
+## Why I built it
+
+DataForge started as a small side project while I was building **I Love
+Shopping**, a full-stack B2C e-commerce platform for a six-month school project.
+I needed realistic products, customers, orders, and reviews that referenced each
+other correctly, so I built a small generator I could configure and rerun
+locally. That use case still shapes DataForge today: relational output,
+reproducible seeds, and exports that fit a real JSON, CSV, or SQL workflow.
+
 ## Features
 
 - **Six built-in category templates** — smartphones, laptops, audio,
