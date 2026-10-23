@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GenerationSettings } from '../types/dataset';
 import type { Brand } from '../types/product';
+import type { FieldMapping } from './outputSchema';
 import { CATEGORY_TEMPLATES } from './categories';
 import {
   PRESET_FORMAT,
@@ -41,11 +42,17 @@ const settings: GenerationSettings = {
   reviewCount: 10,
 };
 
+const outputMapping: FieldMapping = {
+  products: { weight_kg: 'w_kg' },
+  orders: { customer_id: 'buyer_id' },
+};
+
 const preset = createPreset({
   category,
   brands,
   selectedBrands: ['brand-apple', 'brand-google'],
   settings,
+  outputMapping,
 });
 
 const presetJson = (overrides: Record<string, unknown> = {}): string =>
@@ -60,6 +67,7 @@ describe('preset serialization', () => {
       brands,
       selectedBrands: ['brand-apple', 'brand-google'],
       settings,
+      outputMapping,
     });
   });
 
@@ -68,6 +76,27 @@ describe('preset serialization', () => {
 
     expect(contents).toContain('\n  "format": "dataforge"');
     expect(parsePreset(contents)).toEqual(preset);
+  });
+
+  it('preserves output field mappings', () => {
+    const parsed = parsePreset(serializePreset(preset));
+
+    expect(parsed.outputMapping).toEqual(outputMapping);
+  });
+
+  it('upgrades version 1 presets with an identity mapping', () => {
+    const legacyPreset = {
+      format: PRESET_FORMAT,
+      version: 1,
+      category: preset.category,
+      brands: preset.brands,
+      selectedBrands: preset.selectedBrands,
+      settings: preset.settings,
+    };
+    const parsed = parsePreset(JSON.stringify(legacyPreset));
+
+    expect(parsed.version).toBe(PRESET_VERSION);
+    expect(parsed.outputMapping).toEqual({});
   });
 
   it('preserves brand models and price overrides', () => {
@@ -97,9 +126,45 @@ describe('preset serialization', () => {
   });
 
   it('rejects an unsupported version', () => {
-    expect(() => parsePreset(presetJson({ version: 2 }))).toThrow(
-      'Unsupported preset version: 2.',
+    expect(() => parsePreset(presetJson({ version: 3 }))).toThrow(
+      'Unsupported preset version: 3.',
     );
+  });
+
+  it('rejects missing or malformed output mappings', () => {
+    expect(() =>
+      parsePreset(presetJson({ outputMapping: undefined })),
+    ).toThrow('Preset outputMapping is invalid.');
+    expect(() =>
+      parsePreset(presetJson({ outputMapping: [] })),
+    ).toThrow('Preset outputMapping is invalid.');
+    expect(() =>
+      parsePreset(
+        presetJson({ outputMapping: { products: { unknown: 'value' } } }),
+      ),
+    ).toThrow('Preset outputMapping is invalid');
+  });
+
+  it('rejects output mappings with duplicate names', () => {
+    expect(() =>
+      parsePreset(
+        presetJson({ outputMapping: { customers: { name: 'email' } } }),
+      ),
+    ).toThrow('Preset outputMapping is invalid');
+  });
+
+  it('rejects output mappings that collide with CSV attributes', () => {
+    const attributeKey = preset.category.attributes[0]?.key ?? 'color';
+
+    expect(() =>
+      parsePreset(
+        presetJson({
+          outputMapping: {
+            products: { name: `attr_${attributeKey}` },
+          },
+        }),
+      ),
+    ).toThrow('Preset outputMapping is invalid');
   });
 
   it('rejects an invalid category', () => {

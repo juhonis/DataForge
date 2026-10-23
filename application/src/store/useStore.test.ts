@@ -30,6 +30,7 @@ const storage = {
 };
 
 let useStore: (typeof import('./useStore'))['useStore'];
+let migratePersistedState: (typeof import('./useStore'))['migratePersistedState'];
 let category: CategoryTemplate;
 let brands: Brand[];
 
@@ -57,7 +58,7 @@ const getCategory = () => useStore.getState().selectedCategory;
 
 beforeAll(async () => {
   vi.stubGlobal('localStorage', storage);
-  ({ useStore } = await import('./useStore'));
+  ({ useStore, migratePersistedState } = await import('./useStore'));
 });
 
 afterAll(() => {
@@ -80,6 +81,7 @@ beforeEach(() => {
     brands,
     selectedBrands: brands.map((brand) => brand.id),
     dataset: null,
+    outputMapping: {},
   });
 });
 
@@ -205,5 +207,114 @@ describe('attribute mutations', () => {
       '128GB',
       '256GB',
     ]);
+  });
+});
+
+describe('output mapping', () => {
+  it('stores overrides and drops canonical resets', () => {
+    const { setFieldName } = useStore.getState();
+
+    setFieldName('products', 'weight_kg', 'w_kg');
+    setFieldName('products', 'sku', 'item_code');
+
+    expect(useStore.getState().outputMapping).toEqual({
+      products: { weight_kg: 'w_kg', sku: 'item_code' },
+    });
+
+    setFieldName('products', 'weight_kg', 'weight_kg');
+
+    expect(useStore.getState().outputMapping).toEqual({
+      products: { sku: 'item_code' },
+    });
+  });
+
+  it('resets fields, tables, and the full mapping', () => {
+    const {
+      setFieldName,
+      resetFieldName,
+      resetTableMapping,
+      resetOutputMapping,
+    } = useStore.getState();
+
+    setFieldName('products', 'weight_kg', 'w_kg');
+    setFieldName('orders', 'customer_id', 'buyer_id');
+
+    resetFieldName('products', 'weight_kg');
+    expect(useStore.getState().outputMapping).toEqual({
+      orders: { customer_id: 'buyer_id' },
+    });
+
+    resetTableMapping('orders');
+    expect(useStore.getState().outputMapping).toEqual({});
+
+    setFieldName('reviews', 'rating', 'score');
+    resetOutputMapping();
+    expect(useStore.getState().outputMapping).toEqual({});
+  });
+});
+
+describe('preset output mapping', () => {
+  it('applies mapping from an imported preset', () => {
+    useStore.getState().applyPreset({
+      category,
+      brands,
+      selectedBrands: brands.map((brand) => brand.id),
+      settings: useStore.getState().settings,
+      outputMapping: { products: { weight_kg: 'w_kg' } },
+    });
+
+    expect(useStore.getState().outputMapping).toEqual({
+      products: { weight_kg: 'w_kg' },
+    });
+  });
+});
+
+describe('persisted store migration', () => {
+  it('adds an identity mapping to version 1 state', () => {
+    const settings = {
+      seed: 7,
+      productCount: 12,
+      customerCount: 0,
+      ordersPerCustomer: { min: 0, max: 0 },
+      reviewCount: 0,
+    };
+    const migrated = migratePersistedState({ settings }, 1);
+
+    expect(migrated.settings).toEqual(settings);
+    expect(migrated.outputMapping).toEqual({});
+  });
+
+  it('persists mappings in the version 2 payload', () => {
+    useStore.getState().setFieldName('products', 'weight_kg', 'w_kg');
+
+    const stored = JSON.parse(
+      storageData.get('dataforge-config') ?? '{}',
+    );
+
+    expect(stored.version).toBe(2);
+    expect(stored.state.outputMapping).toEqual({
+      products: { weight_kg: 'w_kg' },
+    });
+  });
+
+  it('preserves a valid version 2 mapping', () => {
+    const outputMapping = {
+      products: { weight_kg: 'w_kg' },
+    };
+    const migrated = migratePersistedState({ outputMapping }, 2);
+
+    expect(migrated.outputMapping).toEqual(outputMapping);
+  });
+
+  it('drops malformed version 2 mappings', () => {
+    expect(
+      migratePersistedState(
+        { outputMapping: { products: { weight_kg: 1 } } },
+        2,
+      ).outputMapping,
+    ).toEqual({});
+    expect(
+      migratePersistedState({ outputMapping: null }, 2).outputMapping,
+    ).toEqual({});
   });
 });

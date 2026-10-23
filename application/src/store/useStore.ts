@@ -3,6 +3,11 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { CategoryTemplate, Brand, AttributeDefinition } from '../types/product';
 import type { Dataset, GenerationSettings } from '../types/dataset';
 import type { PresetConfig } from '../core/presets';
+import {
+  isFieldMapping,
+  type DatasetTable,
+  type FieldMapping,
+} from '../core/outputSchema';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
 
 interface StoreState {
@@ -59,6 +64,17 @@ interface StoreState {
   settings: GenerationSettings;
   updateSettings: (updates: Partial<GenerationSettings>) => void;
 
+  // Output field mapping
+  outputMapping: FieldMapping;
+  setFieldName: (
+    table: DatasetTable,
+    field: string,
+    outputName: string,
+  ) => void;
+  resetFieldName: (table: DatasetTable, field: string) => void;
+  resetTableMapping: (table: DatasetTable) => void;
+  resetOutputMapping: () => void;
+
   // Presets
   applyPreset: (preset: PresetConfig) => void;
 }
@@ -70,6 +86,8 @@ export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   ordersPerCustomer: { min: 0, max: 0 },
   reviewCount: 0,
 };
+
+export const DEFAULT_OUTPUT_MAPPING: FieldMapping = {};
 
 const defaultCategory = getDefaultCategory();
 
@@ -93,6 +111,42 @@ const createInitialBrands = (category: CategoryTemplate): Brand[] => {
 };
 
 const initialBrands = createInitialBrands(defaultCategory);
+
+export const migratePersistedState = (
+  persistedState: unknown,
+  version: number,
+): Partial<StoreState> => {
+  const state =
+    typeof persistedState === 'object' && persistedState !== null
+      ? (persistedState as Partial<StoreState>)
+      : {};
+
+  if (version < 1) {
+    return {
+      ...state,
+      dataset: null,
+      settings: {
+        ...DEFAULT_GENERATION_SETTINGS,
+        ...(state.settings ?? {}),
+      },
+      outputMapping: DEFAULT_OUTPUT_MAPPING,
+    };
+  }
+
+  if (version < 2) {
+    return {
+      ...state,
+      outputMapping: DEFAULT_OUTPUT_MAPPING,
+    };
+  }
+
+  return {
+    ...state,
+    outputMapping: isFieldMapping(state.outputMapping)
+      ? state.outputMapping
+      : DEFAULT_OUTPUT_MAPPING,
+  };
+};
 
 export const useStore = create<StoreState>()(
   persist(
@@ -567,6 +621,52 @@ removeAttribute: (categoryId, attributeKey) => {
       settings: { ...state.settings, ...updates },
     })),
 
+  // Output field mapping
+  outputMapping: DEFAULT_OUTPUT_MAPPING,
+  setFieldName: (table, field, outputName) =>
+    set((state) => {
+      const tableMapping = { ...(state.outputMapping[table] ?? {}) };
+      const outputMapping = { ...state.outputMapping };
+
+      if (outputName.trim() === field) {
+        delete tableMapping[field];
+      } else {
+        tableMapping[field] = outputName;
+      }
+
+      if (Object.keys(tableMapping).length === 0) {
+        delete outputMapping[table];
+      } else {
+        outputMapping[table] = tableMapping;
+      }
+
+      return { outputMapping };
+    }),
+  resetFieldName: (table, field) =>
+    set((state) => {
+      const tableMapping = { ...(state.outputMapping[table] ?? {}) };
+      const outputMapping = { ...state.outputMapping };
+
+      delete tableMapping[field];
+
+      if (Object.keys(tableMapping).length === 0) {
+        delete outputMapping[table];
+      } else {
+        outputMapping[table] = tableMapping;
+      }
+
+      return { outputMapping };
+    }),
+  resetTableMapping: (table) =>
+    set((state) => {
+      const outputMapping = { ...state.outputMapping };
+
+      delete outputMapping[table];
+
+      return { outputMapping };
+    }),
+  resetOutputMapping: () => set({ outputMapping: DEFAULT_OUTPUT_MAPPING }),
+
   // Presets
   applyPreset: (preset) =>
     set((state) => ({
@@ -579,12 +679,13 @@ removeAttribute: (categoryId, attributeKey) => {
       brands: preset.brands,
       selectedBrands: preset.selectedBrands,
       settings: preset.settings,
+      outputMapping: preset.outputMapping,
       dataset: null,
     })),
     }),
     {
       name: 'dataforge-config',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         categories: state.categories,
@@ -592,23 +693,9 @@ removeAttribute: (categoryId, attributeKey) => {
         brands: state.brands,
         selectedBrands: state.selectedBrands,
         settings: state.settings,
+        outputMapping: state.outputMapping,
       }),
-      migrate: (persistedState, version) => {
-        if (version < 1) {
-          const state = persistedState as Partial<StoreState>;
-
-          return {
-            ...state,
-            dataset: null,
-            settings: {
-              ...DEFAULT_GENERATION_SETTINGS,
-              ...(state.settings ?? {}),
-            },
-          };
-        }
-
-        return persistedState as Partial<StoreState>;
-      },
+      migrate: migratePersistedState,
     },
   ),
 );

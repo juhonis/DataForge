@@ -1,4 +1,10 @@
 import type { GenerationSettings } from '../types/dataset';
+import {
+  getCsvAttributeColumnNames,
+  isFieldMapping,
+  validateFieldMapping,
+  type FieldMapping,
+} from './outputSchema';
 import type {
   AttributeDefinition,
   Brand,
@@ -11,7 +17,8 @@ import type {
 } from '../types/product';
 
 export const PRESET_FORMAT = 'dataforge' as const;
-export const PRESET_VERSION = 1 as const;
+export const PRESET_VERSION = 2 as const;
+export const LEGACY_PRESET_VERSION = 1 as const;
 
 export interface DataForgePreset {
   format: typeof PRESET_FORMAT;
@@ -20,6 +27,7 @@ export interface DataForgePreset {
   brands: Brand[];
   selectedBrands: string[];
   settings: GenerationSettings;
+  outputMapping: FieldMapping;
 }
 
 export type PresetConfig = Omit<DataForgePreset, 'format' | 'version'>;
@@ -293,10 +301,36 @@ export const createPreset = (config: PresetConfig): DataForgePreset => ({
   brands: config.brands,
   selectedBrands: config.selectedBrands,
   settings: config.settings,
+  outputMapping: config.outputMapping,
 });
 
 export const serializePreset = (preset: DataForgePreset): string =>
   JSON.stringify(preset, null, 2);
+
+const parseOutputMapping = (
+  value: unknown,
+  category: CategoryTemplate,
+): FieldMapping => {
+  if (!isFieldMapping(value)) {
+    throw new PresetValidationError('Preset outputMapping is invalid.');
+  }
+
+  const issues = validateFieldMapping(value, {
+    reservedNames: {
+      products: getCsvAttributeColumnNames(
+        category.attributes.map((attribute) => attribute.key),
+      ),
+    },
+  });
+
+  if (issues.length > 0) {
+    throw new PresetValidationError(
+      `Preset outputMapping is invalid: ${issues[0].message}`,
+    );
+  }
+
+  return value;
+};
 
 export const parsePreset = (contents: string): DataForgePreset => {
   let parsed: unknown;
@@ -315,7 +349,10 @@ export const parsePreset = (contents: string): DataForgePreset => {
       `Unsupported preset format: ${String(parsed.format)}.`,
     );
   }
-  if (parsed.version !== PRESET_VERSION) {
+  if (
+    parsed.version !== LEGACY_PRESET_VERSION &&
+    parsed.version !== PRESET_VERSION
+  ) {
     throw new PresetValidationError(
       `Unsupported preset version: ${String(parsed.version)}.`,
     );
@@ -332,6 +369,11 @@ export const parsePreset = (contents: string): DataForgePreset => {
   if (!isGenerationSettings(parsed.settings)) {
     throw new PresetValidationError('Preset settings are invalid.');
   }
+
+  const outputMapping =
+    parsed.version === LEGACY_PRESET_VERSION
+      ? {}
+      : parseOutputMapping(parsed.outputMapping, parsed.category);
 
   const brandIds = parsed.brands.map((brand) => brand.id);
   assertUnique(brandIds, 'brand ids');
@@ -350,5 +392,6 @@ export const parsePreset = (contents: string): DataForgePreset => {
     brands: parsed.brands,
     selectedBrands: parsed.selectedBrands,
     settings: parsed.settings,
+    outputMapping,
   };
 };
