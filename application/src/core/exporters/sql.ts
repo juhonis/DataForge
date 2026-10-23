@@ -1,5 +1,3 @@
-import type { Dataset } from '../../types/dataset';
-
 export type SqlDialect = 'postgres' | 'mysql';
 
 export interface SqlOptions {
@@ -9,6 +7,14 @@ export interface SqlOptions {
 export interface DatasetSqlOptions extends SqlOptions {
   seed?: number | string;
   configSummary?: string;
+}
+
+export interface DatasetTables {
+  readonly products: readonly object[];
+  readonly customers: readonly object[];
+  readonly orders: readonly object[];
+  readonly order_lines: readonly object[];
+  readonly reviews: readonly object[];
 }
 
 const quoteIdentifier = (identifier: string, dialect: SqlDialect): string => {
@@ -64,7 +70,7 @@ export const toSqlInsert = (
 };
 
 export const datasetToSql = (
-  dataset: Dataset,
+  dataset: DatasetTables,
   options: DatasetSqlOptions = {},
 ): string => {
   const summary =

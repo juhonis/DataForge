@@ -8,12 +8,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { roundMoney } from '../core/money';
-import { toCsv } from '../core/exporters/csv';
-import { toJson } from '../core/exporters/json';
+import type { SqlDialect } from '../core/exporters/sql';
 import {
-  datasetToSql,
-  type SqlDialect,
-} from '../core/exporters/sql';
+  serializeDatasetAsJson,
+  serializeDatasetAsSql,
+  serializeRowsAsCsv,
+  serializeRowsAsJson,
+} from '../core/outputSerialization';
+import type { FieldMapping } from '../core/outputSchema';
 import { downloadText } from '../lib/download';
 import type { Dataset } from '../types/dataset';
 import { Badge, Button, IconButton, Select } from './ui';
@@ -30,6 +32,7 @@ export type DatasetTab = (typeof DATASET_TABS)[number]['key'];
 
 const EMPTY_PRODUCTS: Dataset['products'] = [];
 const EMPTY_ROWS: object[] = [];
+const EMPTY_FIELD_MAPPING: FieldMapping = {};
 
 interface OutputPanelProps {
   dataset: Dataset | null;
@@ -41,6 +44,7 @@ interface OutputPanelProps {
   onSqlDialectChange: (dialect: SqlDialect) => void;
   isPreviewMode: boolean;
   isLoadingPreview: boolean;
+  outputMapping?: FieldMapping;
 }
 
 export const OutputPanel: React.FC<OutputPanelProps> = ({
@@ -53,11 +57,16 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
   onSqlDialectChange,
   isPreviewMode,
   isLoadingPreview,
+  outputMapping = EMPTY_FIELD_MAPPING,
 }) => {
   const products = dataset?.products ?? EMPTY_PRODUCTS;
   const activeRows = dataset ? dataset[activeTab] : EMPTY_ROWS;
   const activeTabLabel =
     DATASET_TABS.find((tab) => tab.key === activeTab)?.label ?? 'Dataset';
+  const activeRowsJson = useMemo(
+    () => serializeRowsAsJson(activeRows, activeTab, outputMapping),
+    [activeRows, activeTab, outputMapping],
+  );
 
   const stats = useMemo(() => {
     if (products.length === 0) return null;
@@ -83,14 +92,14 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
   const copyToClipboard = () => {
     if (activeRows.length === 0) return;
 
-    void navigator.clipboard.writeText(toJson(activeRows));
+    void navigator.clipboard.writeText(activeRowsJson);
   };
 
   const downloadCsv = () => {
     if (activeRows.length === 0) return;
 
     downloadText(
-      toCsv(activeRows),
+      serializeRowsAsCsv(activeRows, activeTab, outputMapping),
       `${categorySlug}-${activeTab}.csv`,
       'text/csv;charset=utf-8',
     );
@@ -100,7 +109,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
     if (!dataset) return;
 
     downloadText(
-      toJson(dataset),
+      serializeDatasetAsJson(dataset, outputMapping),
       `${categorySlug}-dataset.json`,
       'application/json',
     );
@@ -110,7 +119,10 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
     if (!dataset) return;
 
     downloadText(
-      datasetToSql(dataset, { dialect: sqlDialect, seed }),
+      serializeDatasetAsSql(dataset, outputMapping, {
+        dialect: sqlDialect,
+        seed,
+      }),
       `${categorySlug}-dataset-${sqlDialect}.sql`,
       'application/sql',
     );
@@ -308,7 +320,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
                   isPreviewMode ? 'text-warning' : 'text-success'
                 }`}
               >
-                {toJson(activeRows)}
+                {activeRowsJson}
               </pre>
             </div>
           ) : (
