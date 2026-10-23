@@ -23,6 +23,7 @@ function App() {
   const setDataset = useStore((state) => state.setDataset);
   const clearDataset = useStore((state) => state.clearDataset);
   const settings = useStore((state) => state.settings);
+  const outputMapping = useStore((state) => state.outputMapping);
 
   const [activeTab, setActiveTab] = useState<DatasetTab>('products');
   const [sqlDialect, setSqlDialect] = useState<SqlDialect>('postgres');
@@ -234,6 +235,7 @@ function App() {
             onSqlDialectChange={setSqlDialect}
             isPreviewMode={isPreviewMode}
             isLoadingPreview={isLoadingPreview}
+            outputMapping={outputMapping}
           />
         }
       />
