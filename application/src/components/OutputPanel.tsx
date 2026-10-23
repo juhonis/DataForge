@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   Copy,
   Database,
   FileCode2,
   FileJson,
   FileSpreadsheet,
+  ListTree,
   Sparkles,
+  Table2,
 } from 'lucide-react';
 import { roundMoney } from '../core/money';
 import type { SqlDialect } from '../core/exporters/sql';
@@ -15,10 +18,17 @@ import {
   serializeRowsAsCsv,
   serializeRowsAsJson,
 } from '../core/outputSerialization';
-import type { FieldMapping } from '../core/outputSchema';
+import {
+  getCsvAttributeColumnNames,
+  validateFieldMapping,
+  type FieldMapping,
+} from '../core/outputSchema';
+import { useStore } from '../store/useStore';
 import { downloadText } from '../lib/download';
 import type { Dataset } from '../types/dataset';
+import { OutputFieldsInspector } from './OutputFieldsInspector';
 import { Badge, Button, IconButton, Select } from './ui';
+import { cn } from './ui/cn';
 
 export const DATASET_TABS = [
   { key: 'products', label: 'Products' },
@@ -29,6 +39,8 @@ export const DATASET_TABS = [
 ] as const;
 
 export type DatasetTab = (typeof DATASET_TABS)[number]['key'];
+
+type OutputView = 'data' | 'fields';
 
 const EMPTY_PRODUCTS: Dataset['products'] = [];
 const EMPTY_ROWS: object[] = [];
@@ -59,6 +71,8 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
   isLoadingPreview,
   outputMapping = EMPTY_FIELD_MAPPING,
 }) => {
+  const selectedCategory = useStore((state) => state.selectedCategory);
+  const [view, setView] = useState<OutputView>('data');
   const products = dataset?.products ?? EMPTY_PRODUCTS;
   const activeRows = dataset ? dataset[activeTab] : EMPTY_ROWS;
   const activeTabLabel =
@@ -67,6 +81,27 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
     () => serializeRowsAsJson(activeRows, activeTab, outputMapping),
     [activeRows, activeTab, outputMapping],
   );
+  const attributeKeys = useMemo(
+    () => selectedCategory.attributes.map((attribute) => attribute.key),
+    [selectedCategory.attributes],
+  );
+  const validationIssues = useMemo(
+    () =>
+      validateFieldMapping(outputMapping, {
+        reservedNames: {
+          products: getCsvAttributeColumnNames(attributeKeys),
+        },
+      }),
+    [attributeKeys, outputMapping],
+  );
+  const invalidFieldCount = useMemo(
+    () =>
+      new Set(
+        validationIssues.map((issue) => `${issue.table}:${issue.field}`),
+      ).size,
+    [validationIssues],
+  );
+  const hasValidationIssues = invalidFieldCount > 0;
 
   const stats = useMemo(() => {
     if (products.length === 0) return null;
@@ -152,7 +187,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
     <div className="flex-1 overflow-hidden bg-canvas p-3 sm:p-4 lg:p-6">
       <div className="flex h-full flex-col overflow-hidden border border-border bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-muted px-4 py-3 lg:px-6">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div
               className={`h-2 w-2 rounded-full ${
                 isLoadingPreview
@@ -167,13 +202,50 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
             <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
               {statusText}
             </span>
+
+            <div
+              role="group"
+              aria-label="Output view"
+              className="flex items-center border border-border"
+            >
+              <Button
+                size="sm"
+                variant="plain"
+                aria-pressed={view === 'data'}
+                onClick={() => setView('data')}
+                className={cn(
+                  'px-2 py-1 text-[10px] uppercase tracking-wide',
+                  view === 'data'
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:bg-border hover:text-text',
+                )}
+              >
+                <Table2 className="h-3 w-3" />
+                Data
+              </Button>
+              <Button
+                size="sm"
+                variant="plain"
+                aria-pressed={view === 'fields'}
+                onClick={() => setView('fields')}
+                className={cn(
+                  'border-l border-border px-2 py-1 text-[10px] uppercase tracking-wide',
+                  view === 'fields'
+                    ? 'bg-accent text-on-accent'
+                    : 'text-muted hover:bg-border hover:text-text',
+                )}
+              >
+                <ListTree className="h-3 w-3" />
+                Fields
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-1">
             <IconButton
               label="Copy active dataset as JSON"
               onClick={copyToClipboard}
-              disabled={activeRows.length === 0}
+              disabled={activeRows.length === 0 || hasValidationIssues}
               className="hover:bg-border"
             >
               <Copy className="h-4 w-4" />
@@ -181,7 +253,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
             <IconButton
               label="Download active dataset as CSV"
               onClick={downloadCsv}
-              disabled={activeRows.length === 0}
+              disabled={activeRows.length === 0 || hasValidationIssues}
               className="hover:bg-border"
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -189,7 +261,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
             <IconButton
               label="Download full dataset as JSON"
               onClick={downloadJson}
-              disabled={!dataset}
+              disabled={!dataset || hasValidationIssues}
               className="hover:bg-border"
             >
               <FileJson className="h-4 w-4" />
@@ -209,7 +281,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
             <IconButton
               label="Download full dataset as SQL"
               onClick={downloadSql}
-              disabled={!dataset}
+              disabled={!dataset || hasValidationIssues}
               className="hover:bg-border"
             >
               <FileCode2 className="h-4 w-4" />
@@ -273,7 +345,31 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
           })}
         </div>
 
-        {stats && !isPreviewMode && (
+        {hasValidationIssues && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-danger/30 bg-danger-muted px-4 py-2 text-[11px] text-danger lg:px-6"
+          >
+            <span className="flex items-center gap-1.5 font-medium">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              {invalidFieldCount} invalid field
+              {invalidFieldCount === 1 ? ' name' : ' names'} — exports are
+              disabled until fixed.
+            </span>
+            {view === 'data' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setView('fields')}
+                className="text-danger hover:bg-danger/10 hover:text-danger"
+              >
+                Review fields
+              </Button>
+            )}
+          </div>
+        )}
+
+        {stats && !isPreviewMode && view === 'data' && (
           <div className="border-b border-border bg-surface-muted px-4 py-3 lg:px-6">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
               <div className="flex items-center gap-2">
@@ -302,44 +398,60 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
           id="dataset-tab-panel"
           role="tabpanel"
           aria-labelledby={`dataset-tab-${activeTab}`}
-          className="custom-scrollbar flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed sm:p-6 sm:text-sm lg:p-8"
+          className="flex min-h-0 flex-1 overflow-hidden"
         >
-          {activeRows.length > 0 ? (
-            <div className="relative">
-              {isPreviewMode && activeTab === 'products' && (
-                <Badge
-                  tone="warning"
-                  className="absolute -left-2 -top-2 gap-1.5 border border-warning/50 px-3 py-1 uppercase tracking-wider"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Live Preview
-                </Badge>
-              )}
-              <pre
-                className={`whitespace-pre-wrap ${
-                  isPreviewMode ? 'text-warning' : 'text-success'
-                }`}
-              >
-                {activeRowsJson}
-              </pre>
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted">
-              <Database className="h-12 w-12 opacity-10" />
-              <div className="text-center">
-                <p className="mb-2 text-sm font-medium uppercase tracking-widest opacity-40">
-                  {dataset
-                    ? `No ${activeTabLabel} Data`
-                    : 'Select Brands to Preview'}
-                </p>
-                <p className="max-w-xs text-xs text-muted">
-                  {dataset
-                    ? 'Generate a full dataset to populate this tab.'
-                    : 'Select brands in the sidebar to see a live preview of your product configuration'}
-                </p>
-              </div>
-            </div>
+          {view === 'fields' && (
+            <OutputFieldsInspector
+              table={activeTab}
+              tableLabel={activeTabLabel}
+              mapping={outputMapping}
+              issues={validationIssues}
+            />
           )}
+
+          <div
+            className={cn(
+              'custom-scrollbar flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed sm:p-6 sm:text-sm lg:p-8',
+              view === 'fields' && 'hidden xl:block',
+            )}
+          >
+            {activeRows.length > 0 ? (
+              <div className="relative">
+                {isPreviewMode && activeTab === 'products' && (
+                  <Badge
+                    tone="warning"
+                    className="absolute -left-2 -top-2 gap-1.5 border border-warning/50 px-3 py-1 uppercase tracking-wider"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Live Preview
+                  </Badge>
+                )}
+                <pre
+                  className={`whitespace-pre-wrap ${
+                    isPreviewMode ? 'text-warning' : 'text-success'
+                  }`}
+                >
+                  {activeRowsJson}
+                </pre>
+              </div>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted">
+                <Database className="h-12 w-12 opacity-10" />
+                <div className="text-center">
+                  <p className="mb-2 text-sm font-medium uppercase tracking-widest opacity-40">
+                    {dataset
+                      ? `No ${activeTabLabel} Data`
+                      : 'Select Brands to Preview'}
+                  </p>
+                  <p className="max-w-xs text-xs text-muted">
+                    {dataset
+                      ? 'Generate a full dataset to populate this tab.'
+                      : 'Select brands in the sidebar to see a live preview of your product configuration'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
