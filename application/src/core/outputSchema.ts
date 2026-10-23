@@ -91,6 +91,10 @@ export interface FieldMappingValidationOptions {
 
 export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+export const getCsvAttributeColumnNames = (
+  attributeKeys: readonly string[],
+): string[] => attributeKeys.map((key) => `attr_${key}`);
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 

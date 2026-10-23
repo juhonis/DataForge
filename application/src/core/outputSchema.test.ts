@@ -6,6 +6,7 @@ import {
   RENAMEABLE_FIELDS,
   applyDatasetFieldMapping,
   applyFieldMapping,
+  getCsvAttributeColumnNames,
   getEffectiveFieldName,
   isFieldMapping,
   toCamelCase,
@@ -103,6 +104,13 @@ describe('output schema metadata', () => {
   it('keeps the product attributes container fixed', () => {
     expect(FIXED_FIELDS.products).toContain('attributes');
     expect(RENAMEABLE_FIELDS.products).not.toContain('attributes');
+  });
+
+  it('builds flattened CSV attribute column names', () => {
+    expect(getCsvAttributeColumnNames(['color', 'storage'])).toEqual([
+      'attr_color',
+      'attr_storage',
+    ]);
   });
 });
 

@@ -679,6 +679,7 @@ removeAttribute: (categoryId, attributeKey) => {
       brands: preset.brands,
       selectedBrands: preset.selectedBrands,
       settings: preset.settings,
+      outputMapping: preset.outputMapping,
       dataset: null,
     })),
     }),

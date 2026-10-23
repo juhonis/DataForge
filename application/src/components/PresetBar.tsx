@@ -26,9 +26,11 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
   const brands = useStore((state) => state.brands);
   const selectedBrands = useStore((state) => state.selectedBrands);
   const settings = useStore((state) => state.settings);
+  const outputMapping = useStore((state) => state.outputMapping);
   const setSelectedCategory = useStore((state) => state.setSelectedCategory);
   const addCategory = useStore((state) => state.addCategory);
   const updateSettings = useStore((state) => state.updateSettings);
+  const resetOutputMapping = useStore((state) => state.resetOutputMapping);
   const applyPreset = useStore((state) => state.applyPreset);
 
   const [presetId, setPresetId] = useState(BUNDLED_PRESETS[0].id);
@@ -41,6 +43,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
       brands,
       selectedBrands,
       settings,
+      outputMapping,
     });
 
   const handleLoadBundled = () => {
@@ -64,6 +67,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
 
     setSelectedCategory(category);
     updateSettings(bundled.settings);
+    resetOutputMapping();
     onPresetApplied();
     setNotice({ tone: 'success', text: `Loaded ${bundled.name}.` });
   };

@@ -253,6 +253,22 @@ describe('output mapping', () => {
   });
 });
 
+describe('preset output mapping', () => {
+  it('applies mapping from an imported preset', () => {
+    useStore.getState().applyPreset({
+      category,
+      brands,
+      selectedBrands: brands.map((brand) => brand.id),
+      settings: useStore.getState().settings,
+      outputMapping: { products: { weight_kg: 'w_kg' } },
+    });
+
+    expect(useStore.getState().outputMapping).toEqual({
+      products: { weight_kg: 'w_kg' },
+    });
+  });
+});
+
 describe('persisted store migration', () => {
   it('adds an identity mapping to version 1 state', () => {
     const settings = {
