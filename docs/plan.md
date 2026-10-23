@@ -1,7 +1,6 @@
 # DataForge — Completion & v1.1 Plan
 
-Status: **Phases 0–5 complete and merged** (`7fed973`).
-Phases 6–9 proposed 2026-10-22.
+Status: **Phases 0–8 complete and merged.** Phase 9 in progress (2026-10-23).
 Baseline: `ff411ca` — "Fix: updating atribute key names" (2026-03-06)
 Scope: full audit of `application/src`, CI, and repository hygiene
 
@@ -698,17 +697,17 @@ Highest leverage per line written, and currently the weakest area.
    Docker, how the data model and schema templates work, and the output
    formats. Every current claim must be true — in particular the CSV promise
    gets satisfied or removed.
-2. **Un-ignore `/examples`** and commit the four sample outputs (they exist
-   locally, just untracked). Trim to ~10–20 rows each so the repo stays light.
-   Regenerate them from the final exporters.
+2. **~~Un-ignore `/examples`~~** — skipped. The existing product-only samples
+   predate the relational schema and `description` field. Keep `/examples`
+   gitignored; the live demo, screenshots, and README output examples cover this
+   instead.
 3. **`index.html`** — real `<title>`, meta description, OG tags, replace
    `vite.svg` with an inline SVG mark.
 4. **Rewrite `docs/architecture.md`** — actual folder tree, the
    `core` / `store` / `components/ui` layering, the output-schema transform
    (`canonical Dataset → field mapping → preview/export`), and a data-flow
    diagram.
-5. **Decide `application/README.md`** — delete, or reduce to a pointer to the
-   root README.
+5. **`application/README.md`** — already removed; no action needed.
 6. **Manual claim audit** — every feature shown in the README must be
    reachable in the running app, including responsive config, field renaming,
    and export behavior.
@@ -742,7 +741,7 @@ DataForge/
 ├── docs/
 │   ├── architecture.md            rewritten in phase 9
 │   └── plan.md                    this file
-├── examples/                      un-ignored in phase 9
+├── examples/                      local scratch output (gitignored)
 ├── application/
 │   ├── eslint.config.js           scoped to ts/tsx in phase 0
 │   ├── vitest.config.ts           new, phase 0
