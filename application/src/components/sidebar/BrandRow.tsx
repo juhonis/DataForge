@@ -120,13 +120,15 @@ const BrandRowComponent: React.FC<BrandRowProps> = ({ brand }) => {
             <span className="min-w-0 flex-1 truncate text-sm font-semibold text-text">
               {brand.name}
             </span>
-            <Badge
-              tone={
-                brand.selectedModels.length > 0 ? 'accent' : 'neutral'
-              }
-            >
-              {brand.selectedModels.length}/{brand.models.length} models
-            </Badge>
+            <span className="hidden shrink-0 sm:inline-flex">
+              <Badge
+                tone={
+                  brand.selectedModels.length > 0 ? 'accent' : 'neutral'
+                }
+              >
+                {brand.selectedModels.length}/{brand.models.length} models
+              </Badge>
+            </span>
             <IconButton
               label={`Rename brand ${brand.name}`}
               onClick={startEditingName}

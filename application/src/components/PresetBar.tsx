@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Copy, Dices, Download, Layers, Upload } from 'lucide-react';
+import { Copy, Download, Layers, Upload } from 'lucide-react';
 import { BUNDLED_PRESETS } from '../core/builtInPresets';
 import { CATEGORY_TEMPLATES } from '../core/categories';
 import {
@@ -9,12 +9,7 @@ import {
 } from '../core/presets';
 import { downloadText } from '../lib/download';
 import { useStore } from '../store/useStore';
-import {
-  Button,
-  IconButton,
-  NumberInput,
-  Select,
-} from './ui';
+import { Button, IconButton, Select } from './ui';
 
 interface PresetBarProps {
   onPresetApplied: () => void;
@@ -24,8 +19,6 @@ type Notice = {
   tone: 'success' | 'error';
   text: string;
 } | null;
-
-const MAX_SEED = 1_000_000_000;
 
 export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
   const categories = useStore((state) => state.categories);
@@ -120,33 +113,20 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
     }
   };
 
-  const updateSeed = (seed: number) => {
-    updateSettings({ seed });
-  };
-
-  const randomizeSeed = () => {
-    const values = new Uint32Array(1);
-
-    crypto.getRandomValues(values);
-    updateSettings({ seed: values[0] % MAX_SEED });
-  };
-
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-surface px-4 py-2 lg:px-6">
-      <div className="flex items-center gap-1.5 text-muted">
-        <Layers className="h-4 w-4" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">
-          Presets
-        </span>
-      </div>
+    <div className="shrink-0 border-b border-border bg-surface px-3 py-2">
+      <div className="flex items-center gap-2">
+        <Layers
+          className="h-4 w-4 shrink-0 text-muted"
+          aria-hidden
+        />
 
-      <div className="flex items-center gap-1">
         <Select
           variant="bare"
           value={presetId}
           onChange={(event) => setPresetId(event.target.value)}
           aria-label="Bundled preset"
-          className="max-w-[180px] border border-border bg-surface-muted px-2 py-1.5 text-xs text-text"
+          className="min-w-0 flex-1 border border-border bg-surface-muted px-2 py-1.5 text-xs text-text"
         >
           {BUNDLED_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
@@ -154,67 +134,34 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
             </option>
           ))}
         </Select>
+
         <Button
           variant="primary"
           size="sm"
           onClick={handleLoadBundled}
+          className="shrink-0"
         >
           Load
         </Button>
-      </div>
 
-      <div className="hidden h-5 w-px bg-border sm:block" />
+        <div className="flex shrink-0 items-center gap-0.5">
+          <IconButton
+            label="Copy preset to clipboard"
+            onClick={() => void handleCopy()}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </IconButton>
+          <IconButton
+            label="Import preset"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-3.5 w-3.5" />
+          </IconButton>
+          <IconButton label="Export preset" onClick={handleExport}>
+            <Download className="h-3.5 w-3.5" />
+          </IconButton>
+        </div>
 
-      <div className="flex items-center gap-1.5">
-        <label
-          htmlFor="preset-seed"
-          className="text-[10px] font-semibold uppercase text-muted"
-        >
-          Seed
-        </label>
-        <NumberInput
-          id="preset-seed"
-          variant="bare"
-          min={0}
-          max={MAX_SEED}
-          integer
-          value={settings.seed}
-          onValueChange={updateSeed}
-          className="w-20 border border-border bg-surface-muted px-2 py-1 text-center text-sm font-semibold text-accent outline-none"
-        />
-        <IconButton label="Randomize seed" onClick={randomizeSeed}>
-          <Dices className="h-4 w-4" />
-        </IconButton>
-      </div>
-
-      <div className="ml-auto flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void handleCopy()}
-          aria-label="Copy preset to clipboard"
-        >
-          <Copy className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Copy</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          aria-label="Import preset"
-        >
-          <Upload className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Import</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleExport}
-          aria-label="Export preset"
-        >
-          <Download className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Export</span>
-        </Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -229,7 +176,7 @@ export const PresetBar: React.FC<PresetBarProps> = ({ onPresetApplied }) => {
         <span
           role="status"
           aria-live="polite"
-          className={`w-full lg:w-auto text-xs ${
+          className={`mt-1.5 block text-xs ${
             notice.tone === 'error' ? 'text-danger' : 'text-success'
           }`}
         >

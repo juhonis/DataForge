@@ -66,9 +66,9 @@ interface StoreState {
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   seed: 42,
   productCount: 20,
-  customerCount: 50,
-  ordersPerCustomer: { min: 1, max: 3 },
-  reviewCount: 50,
+  customerCount: 0,
+  ordersPerCustomer: { min: 0, max: 0 },
+  reviewCount: 0,
 };
 
 const defaultCategory = getDefaultCategory();
