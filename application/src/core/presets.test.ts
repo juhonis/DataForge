@@ -3,6 +3,9 @@ import type { GenerationSettings } from '../types/dataset';
 import type { Brand } from '../types/product';
 import type { FieldMapping } from './outputSchema';
 import { CATEGORY_TEMPLATES } from './categories';
+import { DEFAULT_REFERENCE_TIME } from './generationTime';
+import { generateDataset } from './generate';
+import { SeededRng } from './rng';
 import {
   PRESET_FORMAT,
   PRESET_VERSION,
@@ -36,6 +39,7 @@ const brands: Brand[] = [
 
 const settings: GenerationSettings = {
   seed: 42,
+  referenceTime: '2025-06-15T13:45:12.123Z',
   productCount: 12,
   customerCount: 8,
   ordersPerCustomer: { min: 1, max: 3 },
@@ -84,6 +88,32 @@ describe('preset serialization', () => {
     expect(parsed.outputMapping).toEqual(outputMapping);
   });
 
+  it('reproduces the complete dataset after preset export and import', () => {
+    const generate = (config: typeof preset) => generateDataset(
+      config.category,
+      config.brands,
+      config.selectedBrands,
+      config.settings,
+      new SeededRng(config.settings.seed),
+    );
+
+    expect(JSON.stringify(generate(parsePreset(serializePreset(preset))))).toBe(
+      JSON.stringify(generate(preset)),
+    );
+  });
+
+  it.each([1, 2])('adds a stable reference time to version %s presets', (version) => {
+    const legacySettings: Partial<GenerationSettings> = { ...settings };
+    delete legacySettings.referenceTime;
+    const parsed = parsePreset(presetJson({ version, settings: legacySettings }));
+
+    expect(parsed.settings).toEqual({
+      ...settings,
+      referenceTime: DEFAULT_REFERENCE_TIME,
+    });
+    expect(parsed.version).toBe(PRESET_VERSION);
+  });
+
   it('upgrades version 1 presets with an identity mapping', () => {
     const legacyPreset = {
       format: PRESET_FORMAT,
@@ -126,8 +156,8 @@ describe('preset serialization', () => {
   });
 
   it('rejects an unsupported version', () => {
-    expect(() => parsePreset(presetJson({ version: 3 }))).toThrow(
-      'Unsupported preset version: 3.',
+    expect(() => parsePreset(presetJson({ version: 4 }))).toThrow(
+      'Unsupported preset version: 4.',
     );
   });
 
@@ -286,6 +316,10 @@ describe('preset serialization', () => {
 
   it.each([
     ['a negative seed', { seed: -1 }],
+    ['a missing reference time', { referenceTime: undefined }],
+    ['an invalid reference time', { referenceTime: 'not-a-date' }],
+    ['an impossible date', { referenceTime: '2026-02-30T00:00:00.000Z' }],
+    ['a timezone-less reference time', { referenceTime: '2026-01-01T00:00:00.000' }],
     ['a zero product count', { productCount: 0 }],
     ['a fractional customer count', { customerCount: 1.5 }],
     ['a reversed order range', { ordersPerCustomer: { min: 3, max: 1 } }],

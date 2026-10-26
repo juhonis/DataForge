@@ -1,4 +1,5 @@
 import type { GenerationSettings } from '../types/dataset';
+import { DEFAULT_REFERENCE_TIME, isReferenceTime } from './generationTime';
 import {
   getCsvAttributeColumnNames,
   isFieldMapping,
@@ -17,7 +18,7 @@ import type {
 } from '../types/product';
 
 export const PRESET_FORMAT = 'dataforge' as const;
-export const PRESET_VERSION = 2 as const;
+export const PRESET_VERSION = 3 as const;
 export const LEGACY_PRESET_VERSION = 1 as const;
 
 export interface DataForgePreset {
@@ -270,6 +271,7 @@ const isGenerationSettings = (
 
   if (
     !Number.isSafeInteger(value.seed) ||
+    !isReferenceTime(value.referenceTime) ||
     (value.seed as number) < 0 ||
     !isIntegerBetween(value.productCount, 1, MAX_COUNT) ||
     !isIntegerBetween(value.customerCount, 0, MAX_COUNT) ||
@@ -351,6 +353,7 @@ export const parsePreset = (contents: string): DataForgePreset => {
   }
   if (
     parsed.version !== LEGACY_PRESET_VERSION &&
+    parsed.version !== 2 &&
     parsed.version !== PRESET_VERSION
   ) {
     throw new PresetValidationError(
@@ -366,7 +369,10 @@ export const parsePreset = (contents: string): DataForgePreset => {
   if (!isStringArray(parsed.selectedBrands)) {
     throw new PresetValidationError('Preset selectedBrands are invalid.');
   }
-  if (!isGenerationSettings(parsed.settings)) {
+  const settings = parsed.version !== PRESET_VERSION && isRecord(parsed.settings)
+    ? { referenceTime: DEFAULT_REFERENCE_TIME, ...parsed.settings }
+    : parsed.settings;
+  if (!isGenerationSettings(settings)) {
     throw new PresetValidationError('Preset settings are invalid.');
   }
 
@@ -391,7 +397,7 @@ export const parsePreset = (contents: string): DataForgePreset => {
     category: parsed.category,
     brands: parsed.brands,
     selectedBrands: parsed.selectedBrands,
-    settings: parsed.settings,
+    settings,
     outputMapping,
   };
 };

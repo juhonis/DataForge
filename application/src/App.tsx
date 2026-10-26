@@ -57,6 +57,7 @@ function App() {
         max: attribute.max,
       })),
       seed: settings.seed,
+      referenceTime: settings.referenceTime,
       customerCount: settings.customerCount,
       ordersPerCustomer: settings.ordersPerCustomer,
       reviewCount: settings.reviewCount,
@@ -71,6 +72,7 @@ function App() {
     brands,
     selectedBrands,
     settings.seed,
+    settings.referenceTime,
     settings.customerCount,
     settings.ordersPerCustomer,
     settings.reviewCount,
@@ -124,6 +126,7 @@ function App() {
         selectedBrands,
         {
           productCount: settings.productCount,
+          referenceTime: settings.referenceTime,
           customerCount: settings.customerCount,
           ordersPerCustomer: settings.ordersPerCustomer,
           reviewCount: settings.reviewCount,

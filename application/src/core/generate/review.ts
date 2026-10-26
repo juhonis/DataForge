@@ -1,6 +1,7 @@
 import type { Customer, Review } from '../../types/dataset';
 import type { Product } from '../../types/product';
 import type { Rng } from '../rng';
+import { DEFAULT_REFERENCE_TIME } from '../generationTime';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const REVIEW_WINDOW_DAYS = 365;
@@ -18,7 +19,7 @@ export const generateReviews = (
   products: readonly Product[],
   customers: readonly Customer[],
   rng: Rng,
-  now: Date = new Date(),
+  now: Date = new Date(DEFAULT_REFERENCE_TIME),
 ): Review[] => {
   const normalizedCount = Math.max(0, Math.floor(count));
 

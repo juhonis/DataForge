@@ -9,6 +9,7 @@ import {
   type FieldMapping,
 } from '../core/outputSchema';
 import { CATEGORY_TEMPLATES, getDefaultCategory } from '../core/categories';
+import { DEFAULT_REFERENCE_TIME, isReferenceTime } from '../core/generationTime';
 
 interface StoreState {
   // Category management
@@ -81,6 +82,7 @@ interface StoreState {
 
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   seed: 42,
+  referenceTime: DEFAULT_REFERENCE_TIME,
   productCount: 20,
   customerCount: 0,
   ordersPerCustomer: { min: 0, max: 0 },
@@ -116,10 +118,21 @@ export const migratePersistedState = (
   persistedState: unknown,
   version: number,
 ): Partial<StoreState> => {
-  const state =
+  const persisted =
     typeof persistedState === 'object' && persistedState !== null
       ? (persistedState as Partial<StoreState>)
       : {};
+
+  const state = {
+    ...persisted,
+    settings: {
+      ...DEFAULT_GENERATION_SETTINGS,
+      ...persisted.settings,
+      referenceTime: isReferenceTime(persisted.settings?.referenceTime)
+        ? persisted.settings.referenceTime
+        : DEFAULT_REFERENCE_TIME,
+    },
+  };
 
   if (version < 1) {
     return {
@@ -685,7 +698,7 @@ removeAttribute: (categoryId, attributeKey) => {
     }),
     {
       name: 'dataforge-config',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         categories: state.categories,

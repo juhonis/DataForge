@@ -8,6 +8,7 @@ import type {
 import type { Product } from '../../types/product';
 import { roundMoney } from '../money';
 import type { Rng } from '../rng';
+import { DEFAULT_REFERENCE_TIME } from '../generationTime';
 
 const MAX_LINES_PER_ORDER = 4;
 const MAX_QUANTITY_PER_LINE = 3;
@@ -42,7 +43,7 @@ export const generateOrders = (
   products: readonly Product[],
   ordersPerCustomer: CountRange,
   rng: Rng,
-  now: Date = new Date(),
+  now: Date = new Date(DEFAULT_REFERENCE_TIME),
 ): GeneratedOrders => {
   const orders: Order[] = [];
   const orderLines: OrderLine[] = [];

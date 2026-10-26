@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Brand, CategoryTemplate } from '../../types/product'
 import { CATEGORY_TEMPLATES } from '../categories'
 import { roundMoney } from '../money'
+import { DEFAULT_REFERENCE_TIME } from '../generationTime'
 import { SeededRng } from '../rng'
 import { generateDataset, type DatasetConfig } from './index'
 
@@ -23,6 +24,7 @@ const makeBrands = (category: CategoryTemplate): Brand[] =>
 const createDataset = (
   seed: number,
   overrides: Partial<DatasetConfig> = {},
+  now?: Date,
 ) => {
   const category = CATEGORY_TEMPLATES[0]
   const brands = makeBrands(category)
@@ -40,7 +42,7 @@ const createDataset = (
     brands.map((brand) => brand.id),
     config,
     new SeededRng(seed),
-    NOW,
+    now,
   )
 }
 
@@ -139,8 +141,54 @@ describe('generateDataset', () => {
     }
   })
 
-  it('is deterministic for the same seed, config, and now', () => {
+  it('is deterministic for the same seed and config', () => {
     expect(createDataset(45)).toEqual(createDataset(45))
+  })
+
+  it.each([undefined, '2025-06-15T13:45:12.123Z'])(
+    'ignores the system clock with reference time %s',
+    (referenceTime) => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date('2026-01-01T00:00:00Z'))
+        const first = createDataset(45, { referenceTime })
+        vi.setSystemTime(new Date('2030-07-01T00:00:00Z'))
+        expect(JSON.stringify(createDataset(45, { referenceTime }))).toBe(
+          JSON.stringify(first),
+        )
+      } finally {
+        vi.useRealTimers()
+      }
+    },
+  )
+
+  it('shifts timestamps by the reference time change while preserving other values', () => {
+    const first = createDataset(45, { referenceTime: DEFAULT_REFERENCE_TIME })
+    const delta = 24 * 60 * 60 * 1000
+    const shifted = new Date(new Date(DEFAULT_REFERENCE_TIME).getTime() + delta)
+    const second = createDataset(45, { referenceTime: shifted.toISOString() })
+
+    expect(second).toEqual({
+      ...first,
+      customers: first.customers.map((row) => ({
+        ...row,
+        created_at: new Date(new Date(row.created_at).getTime() + delta).toISOString(),
+      })),
+      orders: first.orders.map((row) => ({
+        ...row,
+        placed_at: new Date(new Date(row.placed_at).getTime() + delta).toISOString(),
+      })),
+      reviews: first.reviews.map((row) => ({
+        ...row,
+        created_at: new Date(new Date(row.created_at).getTime() + delta).toISOString(),
+      })),
+    })
+  })
+
+  it('still accepts an explicit time override', () => {
+    expect(createDataset(45, {}, NOW)).toEqual(
+      createDataset(45, { referenceTime: NOW.toISOString() }),
+    )
   })
 
   it('changes when the seed changes', () => {

@@ -1,4 +1,5 @@
 import type { GenerationSettings } from '../types/dataset';
+import { DEFAULT_REFERENCE_TIME } from './generationTime';
 
 export interface BundledPreset {
   id: string;
@@ -9,6 +10,7 @@ export interface BundledPreset {
 
 const demoSettings = (seed: number): GenerationSettings => ({
   seed,
+  referenceTime: DEFAULT_REFERENCE_TIME,
   productCount: 24,
   customerCount: 40,
   ordersPerCustomer: { min: 1, max: 3 },

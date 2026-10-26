@@ -4,6 +4,7 @@ import { useStore } from '../../store/useStore';
 import {
   Button,
   Field,
+  Input,
   NumberInput,
 } from '../ui';
 
@@ -117,6 +118,41 @@ export const GenerationPanel: React.FC = () => {
             Randomize
           </Button>
         </div>
+      </section>
+
+      <section className="border border-border bg-surface-muted p-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text">
+          Reference time
+        </h3>
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          Customer, order, and review timestamps use this saved UTC time.
+          Keep it unchanged to reproduce the same dataset.
+        </p>
+        <Field label="Date and time (UTC)" htmlFor="generation-reference-time" className="mt-3">
+          <Input
+            id="generation-reference-time"
+            type="datetime-local"
+            step="0.001"
+            min="0001-01-01T00:00"
+            max="9999-12-31T23:59:59.999"
+            value={settings.referenceTime.slice(0, -1)}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (!value || !event.target.validity.valid) return;
+              const date = new Date(`${value}Z`);
+              if (Number.isFinite(date.getTime())) {
+                updateSettings({ referenceTime: date.toISOString() });
+              }
+            }}
+          />
+        </Field>
+        <Button
+          variant="secondary"
+          className="mt-3"
+          onClick={() => updateSettings({ referenceTime: new Date().toISOString() })}
+        >
+          Use current time
+        </Button>
       </section>
 
       <section className="border border-border bg-surface-muted p-3">

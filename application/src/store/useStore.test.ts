@@ -8,6 +8,7 @@ import {
   vi,
 } from 'vitest';
 import { CATEGORY_TEMPLATES } from '../core/categories';
+import { DEFAULT_REFERENCE_TIME } from '../core/generationTime';
 import type { Brand, CategoryTemplate } from '../types/product';
 
 const storageData = new Map<string, string>();
@@ -280,21 +281,43 @@ describe('persisted store migration', () => {
     };
     const migrated = migratePersistedState({ settings }, 1);
 
-    expect(migrated.settings).toEqual(settings);
+    expect(migrated.settings).toEqual({ ...settings, referenceTime: DEFAULT_REFERENCE_TIME });
     expect(migrated.outputMapping).toEqual({});
   });
 
-  it('persists mappings in the version 2 payload', () => {
+  it('persists mappings and reference time in the version 3 payload', () => {
     useStore.getState().setFieldName('products', 'weight_kg', 'w_kg');
+    const referenceTime = '2025-06-15T13:45:12.123Z';
+    useStore.getState().updateSettings({ referenceTime });
 
     const stored = JSON.parse(
       storageData.get('dataforge-config') ?? '{}',
     );
 
-    expect(stored.version).toBe(2);
+    expect(stored.version).toBe(3);
+    expect(stored.state.settings.referenceTime).toBe(referenceTime);
     expect(stored.state.outputMapping).toEqual({
       products: { weight_kg: 'w_kg' },
     });
+  });
+
+  it('restores the saved reference time when rehydrating', async () => {
+    const referenceTime = '2024-09-10T11:12:13.456Z';
+    useStore.getState().updateSettings({ referenceTime });
+    const saved = storageData.get('dataforge-config')!;
+    useStore.getState().updateSettings({ referenceTime: DEFAULT_REFERENCE_TIME });
+    storageData.set('dataforge-config', saved);
+
+    await useStore.persist.rehydrate();
+
+    expect(useStore.getState().settings.referenceTime).toBe(referenceTime);
+  });
+
+  it.each([0, 1, 2])('adds a stable reference time to version %s state', (version) => {
+    const migrated = migratePersistedState({ settings: { seed: 17 } }, version);
+
+    expect(migrated.settings?.referenceTime).toBe(DEFAULT_REFERENCE_TIME);
+    expect(migrated.settings?.seed).toBe(17);
   });
 
   it('preserves a valid version 2 mapping', () => {

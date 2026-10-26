@@ -1,5 +1,6 @@
 import type { Customer } from '../../types/dataset';
 import type { Rng } from '../rng';
+import { DEFAULT_REFERENCE_TIME } from '../generationTime';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EARLIEST_DAYS_AGO = 365 * 2;
@@ -24,7 +25,7 @@ export const generateCustomer = (rng: Rng, now: Date): Customer => {
 export const generateCustomers = (
   count: number,
   rng: Rng,
-  now: Date = new Date(),
+  now: Date = new Date(DEFAULT_REFERENCE_TIME),
 ): Customer[] => {
   const normalizedCount = Math.max(0, Math.floor(count));
 

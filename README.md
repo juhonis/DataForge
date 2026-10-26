@@ -104,9 +104,12 @@ when output field names are remapped.
 
 ### Reproducibility
 
-The same seed and configuration reproduce the same catalog and relationships.
-Timestamp fields are anchored to the generation time, so their values naturally
-differ between runs made at different times.
+The same seed and configuration reproduce the complete dataset, including
+timestamps. Customer, order, and review timestamps use the saved **Reference
+time** (UTC) in the Generation panel, which defaults to
+`2026-01-01T00:00:00.000Z`. Generating again does not advance this clock.
+Edit the reference time or click **Use current time** to change the date anchor.
+The reference time is preserved in exported presets and browser storage.
 
 ## Output formats
 
@@ -121,8 +124,9 @@ Table names stay canonical, and `attributes` remains a fixed container. Invalid,
 blank, duplicate, reserved, or collision-causing field names are surfaced in the
 Fields inspector and block data export until fixed.
 
-Presets use format version 2. Version 1 presets and persisted configurations are
-migrated automatically with an identity field mapping.
+Presets and browser storage use format version 3. Version 1 and 2 configurations
+are migrated automatically to the fixed reference time; version 1 also receives
+an identity field mapping.
 
 ## Development
 

@@ -4,6 +4,7 @@ import type {
 } from '../../types/dataset';
 import type { Brand, CategoryTemplate } from '../../types/product';
 import { SeededRng, type Rng } from '../rng';
+import { DEFAULT_REFERENCE_TIME } from '../generationTime';
 import { generateCustomers } from './customer';
 import { generateOrders } from './order';
 import { generateProducts } from './product';
@@ -11,6 +12,7 @@ import { generateReviews } from './review';
 
 export interface DatasetConfig extends RelatedDataConfig {
   productCount: number;
+  referenceTime?: string;
 }
 
 export const generateDataset = (
@@ -19,7 +21,7 @@ export const generateDataset = (
   selectedBrandIds: string[],
   config: DatasetConfig,
   rng: Rng = new SeededRng(),
-  now: Date = new Date(),
+  now: Date = new Date(config.referenceTime ?? DEFAULT_REFERENCE_TIME),
 ): Dataset => {
   const products = generateProducts(
     category,

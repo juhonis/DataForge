@@ -148,8 +148,10 @@ DataForge/
 1. A category template supplies brands, models, price ranges, dimensions,
    attributes, SKU/ID rules, and product-name interpolation.
 2. `SeededRng` wraps a seeded Faker instance. Passing the same seed and
-   configuration reproduces the catalog and relationships; timestamps are
-   anchored to the generation time.
+   configuration reproduces the complete dataset. Timestamps are anchored to
+   the saved UTC `settings.referenceTime`, defaulting to
+   `2026-01-01T00:00:00.000Z`, rather than the system clock. The Generation panel
+   edits this value or explicitly replaces it with the current time.
 3. `generateProducts` creates weighted brand/model selections, prices,
    dimensions, SKUs, slugs, images, and attributes.
 4. `generateCustomers` creates customer rows.
@@ -211,12 +213,12 @@ Important constraints:
 
 ## Presets and persistence
 
-Preset format version 2 is a complete configuration:
+Preset format version 3 is a complete configuration:
 
 ```ts
 interface DataForgePreset {
   format: 'dataforge';
-  version: 2;
+  version: 3;
   category: CategoryTemplate;
   brands: Brand[];
   selectedBrands: string[];
@@ -225,12 +227,15 @@ interface DataForgePreset {
 }
 ```
 
-The parser accepts version 1 presets and upgrades them with an identity mapping.
+The parser accepts version 1 and 2 presets and supplies the fixed reference time
+when absent. Version 1 also receives an identity mapping. Version 3 requires a
+valid UTC ISO reference time, including milliseconds.
 Bundled demo presets are smaller UI shortcuts (category ID plus settings), so
 loading one resets the output mapping.
 
-Store persistence also uses version 2. Version 1 state migrates to an identity
-mapping; malformed mapping values fall back to identity. Persisted keys are:
+Store persistence also uses version 3. Older state receives the fixed reference
+time, and version 1 state migrates to an identity mapping; malformed mapping
+values fall back to identity. Persisted keys are:
 
 - `categories`
 - `selectedCategory`

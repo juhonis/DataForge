@@ -66,5 +66,6 @@ export interface RelatedDataConfig {
 
 export interface GenerationSettings extends RelatedDataConfig {
   seed: number;
+  referenceTime: string;
   productCount: number;
 }
